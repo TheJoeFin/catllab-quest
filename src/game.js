@@ -28,17 +28,15 @@ if (typeof io !== 'undefined') {
     socket.on('quest:created', (quest) => {
         console.log('📢 Quest created remotely:', quest);
         loadQuests(); // Reload quests from storage
-        renderActiveQuests();
-        updatePlayerQuestsList();
-        showNotification('New Quest!', `New quest added: ${quest.title}`, 'info', 3000);
+        updatePlayerQuestList();
+        showNotification('New Quest!', `New quest added: ${quest.name}`, 'info', 3000);
     });
     
     socket.on('quest:completed', (data) => {
         console.log('📢 Quest completed remotely:', data);
         loadQuests();
         loadGameState();
-        renderActiveQuests();
-        updatePlayerQuestsList();
+        updatePlayerQuestList();
         updatePlayerStats();
         showNotification('Quest Completed!', 'A quest was completed!', 'success', 3000);
     });
@@ -47,8 +45,7 @@ if (typeof io !== 'undefined') {
         console.log('📢 Quest uncompleted remotely:', data);
         loadQuests();
         loadGameState();
-        renderActiveQuests();
-        updatePlayerQuestsList();
+        updatePlayerQuestList();
         updatePlayerStats();
         showNotification('Quest Updated', 'A quest was marked as incomplete', 'info', 3000);
     });
@@ -56,15 +53,13 @@ if (typeof io !== 'undefined') {
     socket.on('quest:deleted', (data) => {
         console.log('📢 Quest deleted remotely:', data);
         loadQuests();
-        renderActiveQuests();
-        updatePlayerQuestsList();
+        updatePlayerQuestList();
         showNotification('Quest Removed', 'A quest was deleted', 'info', 3000);
     });
     
     socket.on('reward:created', (reward) => {
         console.log('📢 Reward created remotely:', reward);
         loadRewardVault();
-        renderRewardVault();
         showNotification('New Reward!', `New reward available: ${reward.name}`, 'info', 3000);
     });
     
@@ -72,7 +67,6 @@ if (typeof io !== 'undefined') {
         console.log('📢 Reward claimed remotely:', data);
         loadRewardVault();
         loadGameState();
-        renderRewardVault();
         updatePlayerStats();
         showNotification('Reward Claimed!', 'A reward was claimed!', 'success', 3000);
     });
@@ -86,15 +80,17 @@ if (typeof io !== 'undefined') {
     console.warn('Socket.IO not loaded, real-time updates disabled');
 }
 
-// Room definitions with themed furniture
+// Room definitions with level-based interactive objects
 const ROOMS = {
     kitchen: {
         name: 'Kitchen',
         emoji: '🏠',
         background: ['#ffeb3b', '#ffc107'],
-        obstacles: [
-            { x: 200, y: 120, type: 'table', emoji: '🍽️' },
-            { x: 400, y: 120, type: 'stove', emoji: '🔥' }
+        mainObject: { x: 280, y: 280, emoji: '🧙', name: 'Chef Wizard', type: 'wizard' },
+        interactiveObjects: [
+            { x: 200, y: 120, type: 'dishes', emoji: '🍽️', name: 'Dirty Dishes', level: 1, questType: 'dishes' },
+            { x: 400, y: 120, type: 'stove', emoji: '🍳', name: 'Kitchen Counter', level: 2, questType: 'counter' },
+            { x: 480, y: 360, type: 'trash', emoji: '🗑️', name: 'Trash Can', level: 3, questType: 'trash' }
         ],
         doors: [
             { x: 40, y: 520, to: 'basement', label: 'Basement', emoji: '🧺', color: '#607d8b' },
@@ -106,10 +102,11 @@ const ROOMS = {
         name: 'Basement',
         emoji: '🧺',
         background: ['#607d8b', '#455a64'],
-        obstacles: [
-            { x: 160, y: 80, type: 'washer', emoji: '🧼' },
-            { x: 360, y: 200, type: 'dryer', emoji: '👕' },
-            { x: 440, y: 360, type: 'basket', emoji: '🧺' }
+        mainObject: { x: 280, y: 320, emoji: '👹', name: 'Laundry Goblin', type: 'goblin' },
+        interactiveObjects: [
+            { x: 160, y: 80, type: 'washer', emoji: '🧼', name: 'Washing Machine', level: 1, questType: 'washer' },
+            { x: 360, y: 200, type: 'dryer', emoji: '👕', name: 'Dryer', level: 2, questType: 'dryer' },
+            { x: 440, y: 360, type: 'basket', emoji: '🧺', name: 'Laundry Basket', level: 3, questType: 'basket' }
         ],
         doors: [
             { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' },
@@ -121,10 +118,11 @@ const ROOMS = {
         name: 'Pet Room',
         emoji: '🐾',
         background: ['#8bc34a', '#7cb342'],
-        obstacles: [
-            { x: 240, y: 160, type: 'bed', emoji: '🛏️' },
-            { x: 400, y: 240, type: 'bowl', emoji: '🥣' },
-            { x: 520, y: 120, type: 'plant', emoji: '🪴' }
+        mainObject: { x: 300, y: 240, emoji: '🐱', name: 'Fluffy', type: 'pet' },
+        interactiveObjects: [
+            { x: 240, y: 160, type: 'bowl', emoji: '🥣', name: 'Food Bowl', level: 1, questType: 'feed' },
+            { x: 400, y: 320, type: 'litterbox', emoji: '📦', name: 'Litter Box', level: 2, questType: 'clean' },
+            { x: 520, y: 120, type: 'toys', emoji: '🧸', name: 'Pet Toys', level: 3, questType: 'play' }
         ],
         doors: [
             { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' },
@@ -136,10 +134,11 @@ const ROOMS = {
         name: 'Study',
         emoji: '📚',
         background: ['#9c27b0', '#7b1fa2'],
-        obstacles: [
-            { x: 200, y: 200, type: 'desk', emoji: '🪑' },
-            { x: 400, y: 160, type: 'bookshelf', emoji: '📚' },
-            { x: 480, y: 360, type: 'plant', emoji: '🌿' }
+        mainObject: { x: 260, y: 200, emoji: '🦉', name: 'Scholar Owl', type: 'owl' },
+        interactiveObjects: [
+            { x: 200, y: 280, type: 'desk', emoji: '📝', name: 'Homework Desk', level: 1, questType: 'homework' },
+            { x: 400, y: 160, type: 'bookshelf', emoji: '📚', name: 'Bookshelf', level: 2, questType: 'reading' },
+            { x: 480, y: 360, type: 'backpack', emoji: '🎒', name: 'School Bag', level: 3, questType: 'organize' }
         ],
         doors: [
             { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' },
@@ -149,7 +148,87 @@ const ROOMS = {
     }
 };
 
-// NPC definitions
+// Quest definitions for interactive objects by type and level
+const OBJECT_QUESTS = {
+    // Kitchen quests
+    dishes: {
+        1: [
+            { name: "Wash Breakfast Dishes", description: "Wash all the breakfast dishes and put them away", difficulty: "easy", xp: 25 },
+            { name: "Wash Dinner Dishes", description: "Wash all the dinner dishes after the meal", difficulty: "easy", xp: 25 }
+        ]
+    },
+    counter: {
+        2: [
+            { name: "Wipe Kitchen Counter", description: "Clean and wipe down the kitchen counter and stovetop", difficulty: "medium", xp: 35 },
+            { name: "Organize Kitchen", description: "Organize the kitchen counter and put things away", difficulty: "medium", xp: 35 }
+        ]
+    },
+    trash: {
+        3: [
+            { name: "Take Out Kitchen Trash", description: "Take out the kitchen trash and replace the bag", difficulty: "hard", xp: 45 },
+            { name: "Clean Under Sink", description: "Organize and clean the area under the kitchen sink", difficulty: "hard", xp: 45 }
+        ]
+    },
+    // Basement quests
+    washer: {
+        1: [
+            { name: "Sort Laundry", description: "Sort dirty clothes into lights and darks", difficulty: "easy", xp: 25 },
+            { name: "Load Washing Machine", description: "Put sorted clothes into the washing machine", difficulty: "easy", xp: 25 }
+        ]
+    },
+    dryer: {
+        2: [
+            { name: "Move Clothes to Dryer", description: "Transfer wet clothes from washer to dryer", difficulty: "medium", xp: 35 },
+            { name: "Fold Warm Clothes", description: "Fold the warm clothes fresh from the dryer", difficulty: "medium", xp: 35 }
+        ]
+    },
+    basket: {
+        3: [
+            { name: "Put Away Laundry", description: "Put all folded clothes away in drawers and closet", difficulty: "hard", xp: 45 },
+            { name: "Organize Laundry Room", description: "Tidy up the laundry area and organize supplies", difficulty: "hard", xp: 45 }
+        ]
+    },
+    // Pet room quests
+    feed: {
+        1: [
+            { name: "Feed the Pet", description: "Give your pet fresh food and water", difficulty: "easy", xp: 25 },
+            { name: "Refill Water Bowl", description: "Clean and refill the pet's water bowl", difficulty: "easy", xp: 25 }
+        ]
+    },
+    clean: {
+        2: [
+            { name: "Clean Litter Box", description: "Scoop and clean the cat's litter box", difficulty: "medium", xp: 35 },
+            { name: "Wash Pet Area", description: "Clean around the pet's feeding and sleeping area", difficulty: "medium", xp: 35 }
+        ]
+    },
+    play: {
+        3: [
+            { name: "Play with Pet", description: "Spend 15 minutes playing with your pet", difficulty: "hard", xp: 45 },
+            { name: "Groom Pet", description: "Brush and groom your pet's fur", difficulty: "hard", xp: 45 }
+        ]
+    },
+    // Study quests
+    homework: {
+        1: [
+            { name: "Complete Math Homework", description: "Finish all math homework assignments", difficulty: "easy", xp: 25 },
+            { name: "Complete Reading Homework", description: "Finish reading and comprehension homework", difficulty: "easy", xp: 25 }
+        ]
+    },
+    reading: {
+        2: [
+            { name: "Read for 20 Minutes", description: "Read a book for at least 20 minutes", difficulty: "medium", xp: 35 },
+            { name: "Practice Spelling Words", description: "Study and practice your spelling words", difficulty: "medium", xp: 35 }
+        ]
+    },
+    organize: {
+        3: [
+            { name: "Organize School Bag", description: "Clean out and organize your school backpack", difficulty: "hard", xp: 45 },
+            { name: "Prepare for Tomorrow", description: "Pack your bag and lay out clothes for tomorrow", difficulty: "hard", xp: 45 }
+        ]
+    }
+};
+
+// NPC definitions (kept for backward compatibility but now treated as main objects)
 const NPCS = {
     wizard: {
         name: 'Chef Wizard',
@@ -662,6 +741,9 @@ function renderRoom() {
     const room = ROOMS[player.currentRoom];
     const npcsContainer = document.getElementById('npcs-container');
     npcsContainer.innerHTML = '';
+    
+    console.log('Rendering room:', player.currentRoom);
+    console.log('Room data:', room);
 
     // Render doors
     room.doors.forEach((door, index) => {
@@ -688,55 +770,63 @@ function renderRoom() {
 
         npcsContainer.appendChild(doorElement);
     });
+    console.log('Doors rendered:', room.doors.length);
 
-    // Render obstacles (furniture)
-    room.obstacles.forEach((obs, index) => {
-        const obstacle = document.createElement('div');
-        obstacle.className = 'obstacle furniture';
-        obstacle.style.left = obs.x + 'px';
-        obstacle.style.top = obs.y + 'px';
-        
-        // Add emoji for furniture type
-        if (obs.emoji) {
-            obstacle.textContent = obs.emoji;
-            obstacle.style.fontSize = '24px';
-            obstacle.style.display = 'flex';
-            obstacle.style.alignItems = 'center';
-            obstacle.style.justifyContent = 'center';
-        }
-        
-        // Add title for hover tooltip
-        if (obs.type) {
-            obstacle.title = obs.type.charAt(0).toUpperCase() + obs.type.slice(1);
-        }
-        
-        npcsContainer.appendChild(obstacle);
-    });
-
-    // Render NPCs in this room
-    Object.entries(NPCS).forEach(([npcId, npc]) => {
-        if (npc.room === player.currentRoom) {
-            const npcElement = document.createElement('div');
-            npcElement.className = 'npc';
-            npcElement.style.left = npc.x + 'px';
-            npcElement.style.top = npc.y + 'px';
-            npcElement.style.background = npc.color;
-            npcElement.textContent = npc.emoji;
-            npcElement.dataset.npcId = npcId;
-
-            // Check if NPC has any unaccepted quests (show indicator for available quests)
-            const hasAvailableQuest = quests.some(q => q.npcId === npcId && !q.acceptedByPlayer && !q.completed);
-            if (hasAvailableQuest) {
-                npcElement.classList.add('has-quest');
-            }
-
-            npcElement.addEventListener('click', () => {
-                showNPCPanel(npcId);
+    // Render interactive objects (furniture with quests)
+    if (room.interactiveObjects) {
+        console.log('Interactive objects found:', room.interactiveObjects.length);
+        room.interactiveObjects.forEach((obj, index) => {
+            const objElement = document.createElement('div');
+            objElement.className = 'interactive-object';
+            objElement.style.left = obj.x + 'px';
+            objElement.style.top = obj.y + 'px';
+            objElement.textContent = obj.emoji;
+            objElement.dataset.objectType = obj.questType;
+            objElement.dataset.objectLevel = obj.level;
+            
+            // Update title to clarify difficulty
+            const difficultyLabel = obj.level === 1 ? 'Easy' : obj.level === 2 ? 'Medium' : 'Hard';
+            objElement.title = `${obj.name} - ${difficultyLabel} Tasks`;
+            
+            // Add level indicator
+            const levelBadge = document.createElement('div');
+            levelBadge.className = 'object-level-badge';
+            levelBadge.textContent = obj.level;
+            levelBadge.title = `${difficultyLabel} Difficulty`;
+            objElement.appendChild(levelBadge);
+            
+            objElement.addEventListener('click', () => {
+                showObjectQuestPanel(obj);
             });
+            
+            npcsContainer.appendChild(objElement);
+            console.log('Added interactive object:', obj.name);
+        });
+    } else {
+        console.log('No interactive objects in room');
+    }
 
-            npcsContainer.appendChild(npcElement);
-        }
-    });
+    // Render main object (NPC without background)
+    if (room.mainObject) {
+        console.log('Main object found:', room.mainObject.name);
+        const mainObj = room.mainObject;
+        const objElement = document.createElement('div');
+        objElement.className = 'main-object';
+        objElement.style.left = mainObj.x + 'px';
+        objElement.style.top = mainObj.y + 'px';
+        objElement.textContent = mainObj.emoji;
+        objElement.dataset.objectType = mainObj.type;
+        objElement.title = mainObj.name;
+        
+        objElement.addEventListener('click', () => {
+            showMainObjectInfo(mainObj);
+        });
+        
+        npcsContainer.appendChild(objElement);
+        console.log('Added main object:', mainObj.name);
+    } else {
+        console.log('No main object in room');
+    }
 }
 
 // Calculate XP needed for next level
@@ -767,7 +857,7 @@ function addXp(amount) {
     player.xp += amount;
     const xpNeeded = getXpNeeded(player.level);
 
-    // Check for level up - requires 5 completed tasks at current level
+    // Check for level up - requires 5 completed tasks at current player level
     while (player.xp >= xpNeeded) {
         const completedAtCurrentLevel = tasksCompletedAtLevel[player.level] || 0;
 
@@ -775,6 +865,8 @@ function addXp(amount) {
             // Player has completed enough tasks to level up
             player.xp -= xpNeeded;
             player.level++;
+            // Reset task counter for new level
+            tasksCompletedAtLevel[player.level] = 0;
             showLevelUpNotification();
         } else {
             // Not enough tasks completed at this level
@@ -849,29 +941,31 @@ function checkDoorProximity() {
     return false;
 }
 
-// Check if a position collides with any obstacle or NPC
+// Check if a position collides with any obstacle, interactive object, or main object
 function checkCollision(x, y) {
     // Check world boundaries
     if (x < 0 || y < 0 || x + TILE_SIZE > WORLD_WIDTH || y + TILE_SIZE > WORLD_HEIGHT) {
         return true;
     }
 
-    // Check obstacles in current room
     const room = ROOMS[player.currentRoom];
-    for (let obstacle of room.obstacles) {
-        if (Math.abs(x - obstacle.x) < TILE_SIZE &&
-            Math.abs(y - obstacle.y) < TILE_SIZE) {
-            return true;
-        }
-    }
-
-    // Check NPCs in current room
-    for (let [npcId, npc] of Object.entries(NPCS)) {
-        if (npc.room === player.currentRoom) {
-            if (Math.abs(x - npc.x) < TILE_SIZE &&
-                Math.abs(y - npc.y) < TILE_SIZE) {
+    
+    // Check interactive objects in current room
+    if (room.interactiveObjects) {
+        for (let obj of room.interactiveObjects) {
+            if (Math.abs(x - obj.x) < TILE_SIZE &&
+                Math.abs(y - obj.y) < TILE_SIZE) {
                 return true;
             }
+        }
+    }
+    
+    // Check main object in current room
+    if (room.mainObject) {
+        const mainObj = room.mainObject;
+        if (Math.abs(x - mainObj.x) < TILE_SIZE &&
+            Math.abs(y - mainObj.y) < TILE_SIZE) {
+            return true;
         }
     }
 
@@ -986,21 +1080,20 @@ function completeQuest(quest) {
     quest.completed = true;
     quest.completedAt = new Date().toISOString(); // Track when it was completed
 
-    // Track completed tasks for this level
-    if (!tasksCompletedAtLevel[quest.level]) {
-        tasksCompletedAtLevel[quest.level] = 0;
+    // Track completed tasks for the PLAYER'S current level (not quest level)
+    if (!tasksCompletedAtLevel[player.level]) {
+        tasksCompletedAtLevel[player.level] = 0;
     }
-    tasksCompletedAtLevel[quest.level]++;
+    tasksCompletedAtLevel[player.level]++;
 
     // Award XP and gems
     addXp(quest.xpReward);
     addGems(quest.gemReward);
 
     // Show completion message
-    const npc = NPCS[quest.npcId];
-    const npcName = getNPCName(quest.npcId);
-    const completedCount = tasksCompletedAtLevel[quest.level];
-    let message = `+${quest.xpReward} XP, +${quest.gemReward} Gem${quest.gemReward > 1 ? 's' : ''} • ${completedCount}/5 tasks at Level ${quest.level}`;
+    const completedCount = tasksCompletedAtLevel[player.level];
+    const difficultyLabel = quest.level === 1 ? 'Easy' : quest.level === 2 ? 'Medium' : 'Hard';
+    let message = `+${quest.xpReward} XP, +${quest.gemReward} Gem${quest.gemReward > 1 ? 's' : ''} • ${completedCount}/5 tasks at Player Level ${player.level}`;
     showNotification('Quest Complete!', message, 'success', 4000);
 
     // Save state
@@ -1044,6 +1137,87 @@ function canAddTasksToLevel(level, count = 1) {
 function shouldWarnAboutTaskLimit(additionalTasks = 0) {
     const totalIncomplete = getTotalIncompleteTasks();
     return (totalIncomplete + additionalTasks) >= 10;
+}
+
+// Show quest panel for interactive object
+function showObjectQuestPanel(obj) {
+    // Get available quests for this object type and level
+    const availableQuests = OBJECT_QUESTS[obj.questType]?.[obj.level] || [];
+    
+    if (availableQuests.length === 0) {
+        showNotification('No Quests', `No quests available for ${obj.name}`, 'info', 3000);
+        return;
+    }
+    
+    // Randomly select one quest from available quests
+    const selectedQuest = availableQuests[Math.floor(Math.random() * availableQuests.length)];
+    
+    const difficultyLabel = obj.level === 1 ? 'Easy' : obj.level === 2 ? 'Medium' : 'Hard';
+    
+    // Set object info
+    document.getElementById('npc-avatar').textContent = obj.emoji;
+    document.getElementById('npc-avatar').style.background = 'transparent';
+    document.getElementById('npc-name').textContent = obj.name;
+    
+    // Set dialogue
+    document.getElementById('npc-dialogue').textContent = `This ${obj.name.toLowerCase()} needs attention! (${difficultyLabel} Task)`;
+    
+    // Set quest info
+    document.getElementById('quest-title').textContent = selectedQuest.name;
+    document.getElementById('quest-description').textContent = selectedQuest.description;
+    
+    // Display difficulty
+    const difficultyBadge = document.getElementById('quest-difficulty');
+    difficultyBadge.textContent = selectedQuest.difficulty.charAt(0).toUpperCase() + selectedQuest.difficulty.slice(1);
+    difficultyBadge.className = 'difficulty-badge difficulty-' + selectedQuest.difficulty;
+    
+    // Display rewards
+    const gemReward = DIFFICULTY_GEMS[selectedQuest.difficulty] || 1;
+    document.getElementById('quest-xp').textContent = selectedQuest.xp + ' XP';
+    document.getElementById('quest-gems').textContent = gemReward;
+    
+    // Hide IRL reward for object quests
+    document.getElementById('quest-irl-reward-container').style.display = 'none';
+    
+    // Store quest info for acceptance
+    currentQuestInPanel = {
+        name: selectedQuest.name,
+        description: selectedQuest.description,
+        difficulty: selectedQuest.difficulty,
+        xpReward: selectedQuest.xp,
+        gemReward: gemReward,
+        level: obj.level, // This is difficulty level, not player level requirement
+        objectType: obj.type,
+        room: player.currentRoom
+    };
+    
+    // Show quest info, hide no quest info
+    document.getElementById('quest-info').classList.remove('hidden');
+    document.getElementById('no-quest-info').classList.add('hidden');
+    document.getElementById('quest-panel').classList.remove('hidden');
+}
+
+// Show info panel for main object (character)
+function showMainObjectInfo(mainObj) {
+    // Set main object info
+    document.getElementById('npc-avatar').textContent = mainObj.emoji;
+    document.getElementById('npc-avatar').style.background = 'transparent';
+    document.getElementById('npc-name').textContent = mainObj.name;
+    
+    // Set dialogue
+    const dialogues = {
+        wizard: "Hello! Click on the objects around the kitchen to find chores!",
+        goblin: "Oi! Check the laundry machines and basket for tasks!",
+        pet: "*Meow!* Touch my bowl, litter box, or toys for tasks!",
+        owl: "*Hoot!* Interact with the desk, bookshelf, or backpack for study tasks!"
+    };
+    
+    document.getElementById('npc-dialogue').textContent = dialogues[mainObj.type] || "Click on objects in this room to find quests!";
+    
+    // Hide quest info, show no quest info
+    document.getElementById('quest-info').classList.add('hidden');
+    document.getElementById('no-quest-info').classList.remove('hidden');
+    document.getElementById('quest-panel').classList.remove('hidden');
 }
 
 // Show NPC interaction panel
@@ -1177,11 +1351,20 @@ function updatePlayerQuestList() {
         const room = ROOMS[quest.room];
         const difficulty = quest.difficulty || 'easy';
         const difficultyColor = difficulty === 'easy' ? '#4caf50' : difficulty === 'medium' ? '#ff9800' : '#f44336';
+        
+        // Get emoji - either from NPC or use a default based on room
+        let questEmoji = '📋';
+        if (npc && npc.emoji) {
+            questEmoji = npc.emoji;
+        } else if (room) {
+            questEmoji = room.emoji;
+        }
+        
         return `
             <div class="player-quest-item" style="border: 1px solid #ddd; padding: 8px; margin-bottom: 8px; border-radius: 5px; background: white;">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 5px;">
                     <strong style="font-size: 14px;">${quest.name}</strong>
-                    <span style="font-size: 18px;">${npc.emoji}</span>
+                    <span style="font-size: 18px;">${questEmoji}</span>
                 </div>
                 <div style="font-size: 12px; color: #666; margin-bottom: 5px;">${quest.description}</div>
                 <div style="font-size: 11px; color: #999; margin-bottom: 5px;">
@@ -1962,7 +2145,7 @@ function updateActiveQuestsList() {
         html += `<h4 style="margin-top: 0;">Incomplete Quests (${incompleteQuests.length})</h4>`;
         html += incompleteQuests.map(quest => {
             const npc = NPCS[quest.npcId];
-            const npcName = getNPCName(quest.npcId);
+            const npcName = npc ? getNPCName(quest.npcId) : quest.npcId;
             const room = ROOMS[quest.room];
             const incompleteAtLevel = getIncompleteTasksForLevel(quest.level);
             const isDailyBadge = quest.isDaily ? '<span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px;">📅 Daily</span>' : '';
@@ -1970,13 +2153,23 @@ function updateActiveQuestsList() {
                 ? '<span style="color: #999; font-size: 0.85em;">Resets daily</span>'
                 : `<button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>`;
             
+            // Handle NPC display for object-based quests
+            let npcDisplay = '';
+            if (npc && npc.emoji && npc.color) {
+                npcDisplay = `<span class="quest-item-npc" style="background: ${npc.color};">
+                    ${npc.emoji} ${npcName}
+                </span>`;
+            } else {
+                npcDisplay = `<span class="quest-item-npc" style="background: #999;">
+                    ${room.emoji} ${npcName}
+                </span>`;
+            }
+            
             return `
                 <div class="quest-item">
                     <div class="quest-item-header">
                         <span class="quest-item-title">${quest.name}${isDailyBadge}</span>
-                        <span class="quest-item-npc" style="background: ${npc.color};">
-                            ${npc.emoji} ${npcName}
-                        </span>
+                        ${npcDisplay}
                     </div>
                     <div class="quest-item-description">${quest.description}</div>
                     <div class="quest-item-meta">
@@ -1995,20 +2188,30 @@ function updateActiveQuestsList() {
         html += `<h4 style="margin-top: 15px; color: #4caf50;">✅ Completed Quests (${completedQuests.length})</h4>`;
         html += completedQuests.map(quest => {
             const npc = NPCS[quest.npcId];
-            const npcName = getNPCName(quest.npcId);
+            const npcName = npc ? getNPCName(quest.npcId) : quest.npcId;
             const room = ROOMS[quest.room];
             const isDailyBadge = quest.isDaily ? '<span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px;">📅 Daily</span>' : '';
             const deleteButton = quest.isDaily 
                 ? '<span style="color: #999; font-size: 0.85em;">Resets daily</span>'
                 : `<button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>`;
             
+            // Handle NPC display for object-based quests
+            let npcDisplay = '';
+            if (npc && npc.emoji && npc.color) {
+                npcDisplay = `<span class="quest-item-npc" style="background: ${npc.color};">
+                    ${npc.emoji} ${npcName}
+                </span>`;
+            } else {
+                npcDisplay = `<span class="quest-item-npc" style="background: #999;">
+                    ${room.emoji} ${npcName}
+                </span>`;
+            }
+            
             return `
                 <div class="quest-item" style="opacity: 0.6; background: #e8f5e9;">
                     <div class="quest-item-header">
                         <span class="quest-item-title">${quest.name}${isDailyBadge}</span>
-                        <span class="quest-item-npc" style="background: ${npc.color};">
-                            ${npc.emoji} ${npcName}
-                        </span>
+                        ${npcDisplay}
                     </div>
                     <div class="quest-item-meta">
                         <span>📍 ${room.emoji} ${room.name}</span>
@@ -2136,9 +2339,25 @@ function setupEventListeners() {
     document.getElementById('close-help-btn').addEventListener('click', hideHelpModal);
 
     // NPC/Quest panel
+    // NPC/Quest panel - Accept quest button
     document.getElementById('accept-quest-btn').addEventListener('click', () => {
         if (currentQuestInPanel) {
-            acceptQuest(currentQuestInPanel);
+            // If it's an object quest (has objectType), create it dynamically
+            if (currentQuestInPanel.objectType) {
+                const quest = createQuest(
+                    currentQuestInPanel.name,
+                    currentQuestInPanel.description,
+                    currentQuestInPanel.objectType, // Use object type as npcId
+                    currentQuestInPanel.room,
+                    currentQuestInPanel.level,
+                    currentQuestInPanel.difficulty,
+                    currentQuestInPanel.xpReward,
+                    '' // No IRL reward for object quests
+                );
+                acceptQuest(quest);
+            } else {
+                acceptQuest(currentQuestInPanel);
+            }
         }
     });
     document.getElementById('close-quest-btn').addEventListener('click', hideNPCPanel);
