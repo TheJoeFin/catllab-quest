@@ -1,13 +1,26 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const path = require('path');
 const db = require('./database');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+    console.log('👤 A user connected:', socket.id);
+    
+    socket.on('disconnect', () => {
+        console.log('👋 User disconnected:', socket.id);
+    });
+});
 
 // Route for the main page
 app.get('/', (req, res) => {
@@ -46,6 +59,11 @@ app.post('/api/quests', (req, res) => {
         }
         
         const quest = db.quests.create(title, parseInt(points));
+        
+        // Emit WebSocket event
+        io.emit('quest:created', quest);
+        console.log('📢 Quest created event emitted:', quest.id);
+        
         res.status(201).json(quest);
     } catch (error) {
         console.error('Error creating quest:', error);
@@ -71,6 +89,13 @@ app.put('/api/quests/:id/complete', (req, res) => {
             createdAt: quest.created_at,
             completedAt: quest.completed_at
         };
+        
+        // Get updated total points
+        const totalPoints = parseInt(db.settings.get('total_points'));
+        
+        // Emit WebSocket event
+        io.emit('quest:completed', { quest: formattedQuest, totalPoints });
+        console.log('📢 Quest completed event emitted:', formattedQuest.id);
         
         res.json(formattedQuest);
     } catch (error) {
@@ -98,6 +123,13 @@ app.put('/api/quests/:id/uncomplete', (req, res) => {
             completedAt: quest.completed_at
         };
         
+        // Get updated total points
+        const totalPoints = parseInt(db.settings.get('total_points'));
+        
+        // Emit WebSocket event
+        io.emit('quest:uncompleted', { quest: formattedQuest, totalPoints });
+        console.log('📢 Quest uncompleted event emitted:', formattedQuest.id);
+        
         res.json(formattedQuest);
     } catch (error) {
         console.error('Error uncompleting quest:', error);
@@ -114,6 +146,10 @@ app.delete('/api/quests/:id', (req, res) => {
         if (!success) {
             return res.status(404).json({ error: 'Quest not found' });
         }
+        
+        // Emit WebSocket event
+        io.emit('quest:deleted', { questId: id });
+        console.log('📢 Quest deleted event emitted:', id);
         
         res.json({ message: 'Quest deleted successfully' });
     } catch (error) {
@@ -134,8 +170,9 @@ app.get('/api/settings/total_points', (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`🎮 Server is running on http://localhost:${PORT}`);
+    console.log(`🔌 WebSocket support enabled`);
     console.log(`   Open your browser and navigate to the URL above to play!`);
 });
 

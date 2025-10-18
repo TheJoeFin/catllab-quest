@@ -93,8 +93,31 @@ catllab-quest/
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript
 - **Backend**: Node.js, Express.js
 - **Database**: SQLite (via better-sqlite3)
-- **Architecture**: RESTful API
+- **Real-time Communication**: Socket.IO for WebSocket support
+- **Architecture**: RESTful API with real-time updates
 - **Development**: Nodemon for auto-reloading
+
+## Real-Time Features
+
+The application uses **WebSocket** technology (Socket.IO) to provide real-time synchronization across multiple devices:
+
+- **Multi-device support** - Changes made on one device instantly appear on all connected devices
+- **Quest updates** - When a parent adds or deletes a quest, all clients update immediately
+- **Completion notifications** - When a child completes a quest, parents see it in real-time
+- **Reward updates** - Reward creation and claims are synchronized across devices
+- **No page refresh needed** - All updates happen automatically
+
+### WebSocket Events
+
+The application emits and listens for the following events:
+
+- `quest:created` - New quest added
+- `quest:completed` - Quest marked as complete
+- `quest:uncompleted` - Quest marked as incomplete
+- `quest:deleted` - Quest removed
+- `reward:created` - New reward added to vault
+- `reward:claimed` - Reward claimed by child
+- `player:updated` - Player stats updated
 
 ## API Endpoints
 
