@@ -5,6 +5,40 @@ const WORLD_HEIGHT = 600;
 const MOVE_SPEED = TILE_SIZE;
 const PARENT_PASSWORD = 'hero123'; // Default password - can be changed
 
+// Game world scaling for responsive design
+let gameWorldScale = 1;
+
+function updateGameWorldScale() {
+    const gameWorld = document.getElementById('game-world');
+    if (!gameWorld) return;
+    
+    const actualWidth = gameWorld.offsetWidth;
+    const actualHeight = gameWorld.offsetHeight;
+    
+    // Calculate scale based on actual dimensions vs design dimensions
+    const scaleX = actualWidth / WORLD_WIDTH;
+    const scaleY = actualHeight / WORLD_HEIGHT;
+    gameWorldScale = Math.min(scaleX, scaleY);
+    
+    console.log(`Game world scale updated: ${gameWorldScale} (${actualWidth}x${actualHeight})`);
+}
+
+// Update scale on window resize
+window.addEventListener('resize', () => {
+    updateGameWorldScale();
+    updatePlayerPosition();
+    renderRoom();
+});
+
+// Update scale on orientation change
+window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+        updateGameWorldScale();
+        updatePlayerPosition();
+        renderRoom();
+    }, 100);
+});
+
 // Leveling System Configuration
 // IMPORTANT: There is NO maximum level cap! Players can level up indefinitely.
 // - Each level requires: (level * 100) XP + completing 5 tasks at that level
@@ -705,6 +739,10 @@ function init() {
     initializeDailyQuests(); // Initialize or reset daily quests
     updatePlayerStats();
     updatePlayerQuestList();
+    
+    // Update game world scale before switching room
+    updateGameWorldScale();
+    
     switchRoom(player.currentRoom);
     setupEventListeners();
 
@@ -1044,6 +1082,7 @@ function renderRoom() {
     console.log('Room exists?', !!room);
     console.log('npcsContainer element:', npcsContainer);
     console.log('npcsContainer exists?', !!npcsContainer);
+    console.log('Game world scale:', gameWorldScale);
     
     if (!room) {
         console.error('ERROR: Room not found for ID:', player.currentRoom);
@@ -1070,8 +1109,15 @@ function renderRoom() {
     room.doors.forEach((door, index) => {
         const doorElement = document.createElement('div');
         doorElement.className = 'door';
-        doorElement.style.left = door.x + 'px';
-        doorElement.style.top = door.y + 'px';
+        // Apply scaling to position
+        doorElement.style.left = (door.x * gameWorldScale) + 'px';
+        doorElement.style.top = (door.y * gameWorldScale) + 'px';
+        // Apply scaling to size
+        if (gameWorldScale !== 1) {
+            doorElement.style.width = (40 * gameWorldScale) + 'px';
+            doorElement.style.height = (60 * gameWorldScale) + 'px';
+            doorElement.style.fontSize = (20 * gameWorldScale) + 'px';
+        }
         doorElement.style.borderColor = door.color;
         doorElement.dataset.doorTo = door.to;
 
@@ -1103,8 +1149,15 @@ function renderRoom() {
         room.interactiveObjects.forEach((obj, index) => {
             const objElement = document.createElement('div');
             objElement.className = 'interactive-object';
-            objElement.style.left = obj.x + 'px';
-            objElement.style.top = obj.y + 'px';
+            // Apply scaling to position
+            objElement.style.left = (obj.x * gameWorldScale) + 'px';
+            objElement.style.top = (obj.y * gameWorldScale) + 'px';
+            // Apply scaling to size
+            if (gameWorldScale !== 1) {
+                objElement.style.width = (45 * gameWorldScale) + 'px';
+                objElement.style.height = (45 * gameWorldScale) + 'px';
+                objElement.style.fontSize = (26 * gameWorldScale) + 'px';
+            }
             objElement.textContent = obj.emoji;
             objElement.dataset.objectType = obj.questType;
             objElement.dataset.objectLevel = obj.level;
@@ -1129,6 +1182,12 @@ function renderRoom() {
                 levelBadge.className = 'object-level-badge';
                 levelBadge.textContent = obj.level;
                 levelBadge.title = `${difficultyLabel} Difficulty`;
+                // Scale badge size
+                if (gameWorldScale !== 1) {
+                    levelBadge.style.width = (20 * gameWorldScale) + 'px';
+                    levelBadge.style.height = (20 * gameWorldScale) + 'px';
+                    levelBadge.style.fontSize = (12 * gameWorldScale) + 'px';
+                }
                 objElement.appendChild(levelBadge);
             } else if (onCooldown) {
                 // Add a cooldown indicator instead
@@ -1137,6 +1196,12 @@ function renderRoom() {
                 cooldownBadge.style.background = '#999';
                 cooldownBadge.textContent = '⏰';
                 cooldownBadge.title = 'Quest on cooldown - come back later';
+                // Scale badge size
+                if (gameWorldScale !== 1) {
+                    cooldownBadge.style.width = (20 * gameWorldScale) + 'px';
+                    cooldownBadge.style.height = (20 * gameWorldScale) + 'px';
+                    cooldownBadge.style.fontSize = (12 * gameWorldScale) + 'px';
+                }
                 objElement.appendChild(cooldownBadge);
                 objElement.style.opacity = '0.6';
             }
@@ -1162,8 +1227,15 @@ function renderRoom() {
         const mainObj = room.mainObject;
         const objElement = document.createElement('div');
         objElement.className = 'main-object';
-        objElement.style.left = mainObj.x + 'px';
-        objElement.style.top = mainObj.y + 'px';
+        // Apply scaling to position
+        objElement.style.left = (mainObj.x * gameWorldScale) + 'px';
+        objElement.style.top = (mainObj.y * gameWorldScale) + 'px';
+        // Apply scaling to size
+        if (gameWorldScale !== 1) {
+            objElement.style.width = (50 * gameWorldScale) + 'px';
+            objElement.style.height = (50 * gameWorldScale) + 'px';
+            objElement.style.fontSize = (32 * gameWorldScale) + 'px';
+        }
         objElement.textContent = mainObj.emoji;
         objElement.dataset.objectType = mainObj.type;
         objElement.title = mainObj.name;
@@ -1293,8 +1365,15 @@ function showLevelUpNotification() {
 
 // Update player position
 function updatePlayerPosition() {
-    player.element.style.left = player.x + 'px';
-    player.element.style.top = player.y + 'px';
+    // Apply scaling to player position
+    player.element.style.left = (player.x * gameWorldScale) + 'px';
+    player.element.style.top = (player.y * gameWorldScale) + 'px';
+    
+    // Apply scaling to player size
+    if (gameWorldScale !== 1) {
+        player.element.style.width = (40 * gameWorldScale) + 'px';
+        player.element.style.height = (40 * gameWorldScale) + 'px';
+    }
 
     // Check for door proximity first (higher priority)
     if (checkDoorProximity()) {
@@ -2861,9 +2940,13 @@ gameWorld.addEventListener('click', (e) => {
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
+    // Convert click position to game coordinates (accounting for scale)
+    const gameClickX = clickX / gameWorldScale;
+    const gameClickY = clickY / gameWorldScale;
+
     // Calculate the target position (center the player on the click)
-    const targetX = clickX - (TILE_SIZE / 2);
-    const targetY = clickY - (TILE_SIZE / 2);
+    const targetX = gameClickX - (TILE_SIZE / 2);
+    const targetY = gameClickY - (TILE_SIZE / 2);
 
     // Check if the position is valid
     if (!checkCollision(targetX, targetY)) {

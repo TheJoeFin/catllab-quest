@@ -2,6 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
 }
 
 body {
@@ -13,6 +14,8 @@ body {
     min-height: 100vh;
     padding: 20px;
     margin: 0;
+    -webkit-text-size-adjust: 100%; /* Prevent text size adjustment on orientation change */
+    touch-action: manipulation; /* Improve touch responsiveness */
 }
 
 .game-container {
@@ -120,6 +123,14 @@ body {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+.player-stats h3 {
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3),
+                 0 1px 2px rgba(0, 0, 0, 0.2);
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
 .player-stats:hover {
     transform: translateY(-3px) scale(1.02) translateZ(0);
     box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5),
@@ -202,6 +213,7 @@ body {
     max-height: calc(100vh - 200px);
     overflow-y: auto;
     flex: 1;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .player-quest-list::-webkit-scrollbar {
@@ -216,6 +228,13 @@ body {
 .player-quest-list::-webkit-scrollbar-thumb {
     background: #667eea;
     border-radius: 3px;
+}
+
+/* Hide scrollbar on mobile but keep functionality */
+@media (max-width: 768px) {
+    .player-quest-list::-webkit-scrollbar {
+        width: 3px;
+    }
 }
 
 .btn-small {
@@ -270,6 +289,10 @@ body {
                 0 4px 8px rgba(0, 0, 0, 0.05);
     transform: translateY(0);
     position: relative;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+    min-height: 44px; /* Minimum touch target size */
 }
 
 .room-nav-btn::before {
@@ -306,6 +329,29 @@ body {
     box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5),
                 0 2px 8px rgba(118, 75, 162, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Touch-specific behavior */
+@media (hover: none) and (pointer: coarse) {
+    .room-nav-btn {
+        min-height: 48px; /* Larger touch target on mobile */
+    }
+    
+    .room-nav-btn:hover {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
+                    0 4px 8px rgba(0, 0, 0, 0.05);
+        border-color: #ddd;
+    }
+    
+    .room-nav-btn:hover::before {
+        opacity: 0;
+    }
+    
+    .room-nav-btn:active {
+        transform: scale(0.95);
+        opacity: 0.9;
+    }
 }
 
 #position {
@@ -399,6 +445,7 @@ body {
     background-color: rgba(255, 255, 255, 0.95);
     transform: translateZ(0);
     transition: box-shadow 0.3s ease;
+    touch-action: none; /* Allow custom touch handling */
 }
 
 #game-world:hover {
@@ -406,6 +453,20 @@ body {
                 0 25px 90px rgba(0, 0, 0, 0.25),
                 inset 0 2px 4px rgba(0, 0, 0, 0.1),
                 inset 0 -2px 4px rgba(255, 255, 255, 0.1);
+}
+
+/* Container for NPCs - ensure it scales with game world */
+#npcs-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#npcs-container > * {
+    pointer-events: auto;
 }
 
 /* Obstacles/Furniture (rendered dynamically per room) */
@@ -829,6 +890,9 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    padding: 20px; /* Add padding for mobile */
+    overflow-y: auto; /* Allow scrolling if content is too tall */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .quest-panel-content,
@@ -841,6 +905,21 @@ body {
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Make sure modals don't bounce on iOS */
+@supports (-webkit-touch-callout: none) {
+    .quest-panel,
+    .parent-panel {
+        position: fixed;
+        overflow: hidden;
+    }
+    
+    .quest-panel-content,
+    .parent-panel-content {
+        max-height: 85vh;
+    }
 }
 
 .quest-panel-content h2,
@@ -950,6 +1029,9 @@ body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1),
                 0 2px 4px rgba(0, 0, 0, 0.06);
     transform: translateZ(0);
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation; /* Improve touch responsiveness */
 }
 
 .btn::before {
@@ -979,6 +1061,20 @@ body {
 .btn:active {
     transform: translateY(0) translateZ(0);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Touch-specific button behavior */
+@media (hover: none) and (pointer: coarse) {
+    .btn:hover {
+        transform: translateY(0) translateZ(0);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1),
+                    0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+    
+    .btn:active {
+        transform: scale(0.97);
+        opacity: 0.9;
+    }
 }
 
 .btn-primary {
@@ -2249,6 +2345,7 @@ body {
     .game-container {
         flex-direction: column;
         align-items: center;
+        gap: 15px;
     }
 
     .left-sidebar {
@@ -2256,28 +2353,650 @@ body {
         max-width: 600px;
     }
 
+    .right-sidebar {
+        width: 100%;
+        max-width: 600px;
+        order: 3;
+    }
+
     .main-game-area {
         width: 100%;
         align-items: center;
+        order: 2;
+    }
+
+    #game-world {
+        width: 100%;
+        max-width: 600px;
+        height: 600px;
     }
 }
 
 @media (max-width: 768px) {
     body {
-        padding: 10px;
+        padding: 8px;
     }
 
-    .left-sidebar {
+    .game-container {
+        gap: 12px;
+    }
+
+    .left-sidebar, .right-sidebar {
         padding: 15px;
+        max-width: 100%;
     }
 
     .left-sidebar h1 {
         font-size: 1.5em;
     }
 
+    .left-sidebar h3,
+    .right-sidebar h2 {
+        font-size: 1.1em;
+    }
+
     #game-world {
         width: 100%;
-        max-width: 500px;
-        height: 500px;
+        max-width: 100%;
+        height: 400px;
+    }
+
+    /* Adjust room navigation buttons for mobile */
+    .room-quick-nav {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+
+    .room-nav-btn {
+        padding: 10px 4px;
+        font-size: 1.5em;
+    }
+
+    /* Make stat rows more compact */
+    .stat-row {
+        font-size: 1em;
+    }
+
+    /* Adjust player stats padding */
+    .player-stats {
+        padding: 12px;
+    }
+
+    /* Modal adjustments */
+    .quest-panel-content,
+    .parent-panel-content,
+    .reward-vault-content,
+    .help-modal-content {
+        padding: 20px;
+        max-height: 85vh;
+        width: 95%;
+    }
+
+    /* Button sizing */
+    .btn {
+        padding: 10px 16px;
+        font-size: 0.95em;
+    }
+
+    /* Notification positioning */
+    .notification-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+
+    .notification {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+
+    .game-container {
+        gap: 10px;
+    }
+
+    .left-sidebar, .right-sidebar {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .left-sidebar h1 {
+        font-size: 1.3em;
+    }
+
+    .tagline {
+        font-size: 0.8em;
+    }
+
+    .left-sidebar h3 {
+        font-size: 1em;
+        margin-bottom: 8px;
+    }
+
+    .right-sidebar h2 {
+        font-size: 1em;
+    }
+
+    /* Game world adjustments */
+    #game-world {
+        height: 350px;
+        border-width: 3px;
+        border-radius: 8px;
+    }
+
+    /* Scale down game elements */
+    #player {
+        width: 32px;
+        height: 32px;
+    }
+
+    #player::before {
+        width: 18px;
+        height: 18px;
+        left: 7px;
+    }
+
+    #player::after {
+        width: 22px;
+        height: 15px;
+        top: 16px;
+        left: 5px;
+    }
+
+    .player-eye {
+        width: 5px;
+        height: 5px;
+        top: 6px;
+    }
+
+    .player-eye.left-eye {
+        left: 10px;
+    }
+
+    .player-eye.right-eye {
+        left: 17px;
+    }
+
+    .player-smile {
+        width: 8px;
+        height: 4px;
+        top: 12px;
+        left: 12px;
+    }
+
+    .player-arm {
+        width: 4px;
+        height: 13px;
+        top: 17px;
+    }
+
+    .player-leg {
+        width: 6px;
+        height: 11px;
+        top: 29px;
+    }
+
+    .left-leg {
+        left: 8px;
+    }
+
+    .right-leg {
+        right: 8px;
+    }
+
+    /* Scale NPCs and objects */
+    .main-object, .npc {
+        width: 40px;
+        height: 40px;
+        font-size: 28px;
+    }
+
+    .interactive-object {
+        width: 38px;
+        height: 38px;
+        font-size: 22px;
+    }
+
+    .door {
+        width: 35px;
+        height: 50px;
+    }
+
+    .door-label {
+        font-size: 18px;
+    }
+
+    .door-text {
+        font-size: 7px;
+    }
+
+    /* Room navigation */
+    .room-quick-nav {
+        gap: 6px;
+    }
+
+    .room-nav-btn {
+        padding: 8px 2px;
+        font-size: 1.2em;
+        border-width: 1.5px;
+    }
+
+    /* Stats adjustments */
+    .stat-row {
+        font-size: 0.95em;
+        margin: 6px 0;
+    }
+
+    .player-stats {
+        padding: 10px;
+    }
+
+    .xp-bar-container {
+        height: 16px;
+        margin-top: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 8px 12px;
+        font-size: 0.9em;
+        margin: 3px;
+    }
+
+    .parent-mode-btn,
+    .reward-vault-btn,
+    .help-btn {
+        padding: 10px 16px;
+        font-size: 0.95em;
+    }
+
+    /* Quest items in sidebar */
+    .player-quest-list {
+        max-height: calc(100vh - 180px);
+    }
+
+    .quest-item {
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+
+    .quest-item-title {
+        font-size: 0.95em;
+    }
+
+    .quest-item-description {
+        font-size: 0.85em;
+    }
+
+    /* Modals */
+    .quest-panel-content,
+    .parent-panel-content,
+    .reward-vault-content,
+    .help-modal-content {
+        padding: 15px;
+        max-height: 90vh;
+        width: 98%;
+        border-radius: 12px;
+    }
+
+    .modal-close-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
+        top: 10px;
+        right: 10px;
+    }
+
+    .npc-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+
+    .npc-avatar {
+        width: 50px;
+        height: 50px;
+        font-size: 28px;
+    }
+
+    .quest-panel-content h2,
+    .parent-panel-content h2,
+    .reward-vault-content h2 {
+        font-size: 1.3em;
+        margin-top: 35px;
+    }
+
+    .quest-panel-content h3,
+    .parent-panel-content h3 {
+        font-size: 1.1em;
+    }
+
+    /* Form elements */
+    .form-group {
+        margin-bottom: 12px;
+    }
+
+    .form-group label {
+        font-size: 0.9em;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 8px;
+        font-size: 0.9em;
+    }
+
+    /* Welcome modal */
+    .welcome-modal-content {
+        width: 98%;
+        max-height: 95vh;
+        border-radius: 15px;
+    }
+
+    .welcome-header {
+        padding: 20px 15px;
+    }
+
+    .welcome-greeting h1 {
+        font-size: 1.4em;
+    }
+
+    .welcome-date {
+        font-size: 0.95em;
+    }
+
+    .welcome-body {
+        padding: 15px;
+    }
+
+    .stats-section {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 12px;
+    }
+
+    .welcome-section {
+        margin-bottom: 18px;
+        padding-bottom: 15px;
+    }
+
+    .welcome-section h3 {
+        font-size: 1em;
+        margin-bottom: 12px;
+    }
+
+    .welcome-footer {
+        padding: 15px;
+    }
+
+    .motivational-quote {
+        font-size: 0.95em;
+        margin-bottom: 15px;
+    }
+
+    .welcome-start-btn {
+        padding: 12px 20px;
+        font-size: 1em;
+    }
+
+    /* Template modal */
+    .template-modal-content {
+        width: 98%;
+        max-height: 95vh;
+    }
+
+    .template-modal-header {
+        padding: 15px 20px;
+    }
+
+    .template-modal-header h2 {
+        font-size: 1.2em;
+    }
+
+    .template-quests-container {
+        padding: 15px;
+    }
+
+    .template-item {
+        padding: 10px;
+        flex-direction: column;
+    }
+
+    .template-item input[type="checkbox"] {
+        margin: 0 0 8px 0;
+    }
+
+    /* Gem display */
+    .gem-display {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .gem-icon {
+        font-size: 36px;
+    }
+
+    .gem-number {
+        font-size: 28px;
+    }
+
+    .gem-label {
+        font-size: 12px;
+    }
+
+    /* Info section */
+    .info p {
+        font-size: 0.85em;
+    }
+
+    .current-location p {
+        font-size: 1em;
+    }
+
+    /* Notification adjustments */
+    .notification {
+        padding: 12px 16px;
+        min-width: 0;
+    }
+
+    .notification-icon {
+        font-size: 20px;
+    }
+
+    .notification-title {
+        font-size: 0.9em;
+    }
+
+    .notification-message {
+        font-size: 0.8em;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 360px) {
+    .left-sidebar h1 {
+        font-size: 1.1em;
+    }
+
+    .tagline {
+        font-size: 0.75em;
+    }
+
+    #game-world {
+        height: 300px;
+    }
+
+    .room-quick-nav {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+    }
+
+    .room-nav-btn {
+        padding: 6px 2px;
+        font-size: 1.1em;
+    }
+
+    .stat-row {
+        font-size: 0.9em;
+    }
+
+    .btn {
+        font-size: 0.85em;
+        padding: 7px 10px;
+    }
+
+    .quest-panel-content h2,
+    .parent-panel-content h2 {
+        font-size: 1.1em;
+    }
+
+    .welcome-greeting h1 {
+        font-size: 1.2em;
+    }
+}
+
+/* Landscape mode optimization for mobile */
+@media (max-width: 896px) and (orientation: landscape) {
+    body {
+        padding: 5px;
+        min-height: 100vh;
+    }
+
+    .game-container {
+        flex-direction: row;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .left-sidebar {
+        width: 240px;
+        max-width: 240px;
+        padding: 12px;
+        max-height: calc(100vh - 10px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .right-sidebar {
+        width: 240px;
+        max-width: 240px;
+        padding: 12px;
+        order: 3;
+        max-height: calc(100vh - 10px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .main-game-area {
+        flex: 1;
+        order: 2;
+    }
+
+    #game-world {
+        width: 100%;
+        height: calc(100vh - 20px);
+        max-height: 500px;
+    }
+
+    .left-sidebar h1 {
+        font-size: 1.2em;
+    }
+
+    .left-sidebar h3,
+    .right-sidebar h2 {
+        font-size: 0.95em;
+    }
+
+    .tagline {
+        font-size: 0.75em;
+    }
+
+    .stat-row {
+        font-size: 0.9em;
+        margin: 5px 0;
+    }
+
+    .player-stats {
+        padding: 10px;
+    }
+
+    .room-quick-nav {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+    }
+
+    .room-nav-btn {
+        padding: 6px 4px;
+        font-size: 1.1em;
+    }
+
+    .btn,
+    .parent-mode-btn,
+    .reward-vault-btn,
+    .help-btn {
+        padding: 8px 12px;
+        font-size: 0.85em;
+        margin: 3px 0;
+    }
+
+    .info p {
+        font-size: 0.8em;
+    }
+
+    /* Modals in landscape */
+    .quest-panel-content,
+    .parent-panel-content,
+    .reward-vault-content {
+        max-height: 95vh;
+        max-width: 600px;
+    }
+
+    .welcome-modal-content {
+        max-height: 95vh;
+        max-width: 650px;
+    }
+
+    .stats-section {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .stat-card {
+        padding: 10px;
+    }
+
+    .stat-icon {
+        font-size: 1.5em;
+    }
+
+    .stat-card .stat-value {
+        font-size: 1.2em;
+    }
+}
+
+/* iPad and tablet specific */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .left-sidebar,
+    .right-sidebar {
+        max-width: 320px;
+    }
+
+    #game-world {
+        max-width: 600px;
+        height: 600px;
+    }
+
+    .notification-container {
+        max-width: 400px;
     }
 }
