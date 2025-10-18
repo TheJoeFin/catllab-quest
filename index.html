@@ -31,6 +31,14 @@
                 </div>
             </div>
 
+            <!-- Active Quests -->
+            <div class="player-quests">
+                <h3>Active Quests</h3>
+                <div id="player-quest-list" class="player-quest-list">
+                    <p style="color: #999; font-size: 14px;">No active quests. Talk to NPCs!</p>
+                </div>
+            </div>
+
             <!-- Controls Info -->
             <div class="info">
                 <h3>Controls</h3>
@@ -95,7 +103,7 @@
                         </div>
                     </div>
                     <div class="quest-panel-buttons">
-                        <button id="complete-quest-btn" class="btn btn-primary">Complete Quest</button>
+                        <button id="accept-quest-btn" class="btn btn-primary">Accept Quest</button>
                         <button id="close-quest-btn" class="btn btn-secondary">Close</button>
                     </div>
                 </div>
@@ -125,34 +133,16 @@
 
                 <!-- Quest Management -->
                 <div id="parent-quest-management" class="quest-management hidden">
-                    <h3>Create New Quest</h3>
-                    <div class="form-group">
-                        <label>Quest Name:</label>
-                        <input type="text" id="new-quest-name" placeholder="e.g., Wash the Dishes">
+                    <h3>Create New Quests</h3>
+                    <p style="color: #666; font-size: 14px; margin-top: -10px;">Add multiple quests at once! Each level allows 5 active tasks.</p>
+
+                    <div id="quest-forms-container">
+                        <!-- Quest forms will be added here dynamically -->
                     </div>
-                    <div class="form-group">
-                        <label>Description:</label>
-                        <textarea id="new-quest-description" placeholder="What needs to be done?"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Assign to NPC:</label>
-                        <select id="new-quest-npc">
-                            <option value="wizard">🧙 Chef Wizard (Kitchen)</option>
-                            <option value="goblin">👹 Laundry Goblin (Basement)</option>
-                            <option value="pet" id="pet-option">🐱 Fluffy (Pet Room)</option>
-                            <option value="owl">🦉 Scholar Owl (Study)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>XP Reward:</label>
-                        <input type="number" id="new-quest-xp" value="50" min="10" max="500">
-                    </div>
-                    <div class="form-group">
-                        <label>IRL Reward (optional):</label>
-                        <input type="text" id="new-quest-reward" placeholder="e.g., 30 min screen time">
-                    </div>
+
                     <div class="panel-buttons">
-                        <button id="create-quest-btn" class="btn btn-primary">Create Quest</button>
+                        <button id="add-quest-form-btn" class="btn btn-secondary">+ Add Another Quest</button>
+                        <button id="create-all-quests-btn" class="btn btn-primary">Create All Quests</button>
                         <button id="close-parent-panel" class="btn btn-secondary">Close</button>
                     </div>
 

@@ -120,6 +120,37 @@ body {
     border-radius: 10px;
 }
 
+/* Player Quests Section */
+.player-quests {
+    background: #f8f8f8;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.player-quest-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.player-quest-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.player-quest-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.player-quest-list::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 3px;
+}
+
+.btn-small {
+    padding: 5px 10px;
+    font-size: 0.85em;
+}
+
 /* Info Section */
 .info {
     background: #f8f8f8;
@@ -739,6 +770,19 @@ body {
 .quest-item-xp {
     color: #667eea;
     font-weight: bold;
+}
+
+.quest-item-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 0.85em;
+    color: #999;
+    margin-bottom: 8px;
+}
+
+.quest-item-meta span {
+    white-space: nowrap;
 }
 
 /* Hidden class */

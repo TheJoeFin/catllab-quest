@@ -154,9 +154,11 @@ const xpNeededDisplay = document.getElementById('xp-needed');
 const xpBar = document.getElementById('xp-bar');
 const gameWorld = document.getElementById('game-world');
 
-// Quest system - now tied to NPCs
-let quests = []; // Each quest will have { npcId, name, description, xpReward, irlReward }
+// Quest system - enhanced with room, level, and completion tracking
+let quests = []; // Each quest will have { id, npcId, name, description, room, level, xpReward, irlReward, acceptedByPlayer, completed }
 let currentNPC = null;
+let currentQuestInPanel = null; // Track which quest is being viewed in the panel
+let tasksCompletedAtLevel = {}; // Track completed tasks per level { level: count }
 
 // Pet customization
 let petName = 'Fluffy'; // Default name
@@ -165,7 +167,9 @@ let petName = 'Fluffy'; // Default name
 function init() {
     loadGameState();
     loadPetName();
+    loadTasksCompleted();
     updatePlayerStats();
+    updatePlayerQuestList();
     switchRoom(player.currentRoom);
     setupEventListeners();
 
@@ -283,9 +287,9 @@ function renderRoom() {
             npcElement.textContent = npc.emoji;
             npcElement.dataset.npcId = npcId;
 
-            // Check if NPC has a quest
-            const hasQuest = quests.some(q => q.npcId === npcId);
-            if (hasQuest) {
+            // Check if NPC has any unaccepted quests (show indicator for available quests)
+            const hasAvailableQuest = quests.some(q => q.npcId === npcId && !q.acceptedByPlayer && !q.completed);
+            if (hasAvailableQuest) {
                 npcElement.classList.add('has-quest');
             }
 
@@ -320,11 +324,21 @@ function addXp(amount) {
     player.xp += amount;
     const xpNeeded = getXpNeeded(player.level);
 
-    // Check for level up
+    // Check for level up - requires 5 completed tasks at current level
     while (player.xp >= xpNeeded) {
-        player.xp -= xpNeeded;
-        player.level++;
-        showLevelUpNotification();
+        const completedAtCurrentLevel = tasksCompletedAtLevel[player.level] || 0;
+
+        if (completedAtCurrentLevel >= 5) {
+            // Player has completed enough tasks to level up
+            player.xp -= xpNeeded;
+            player.level++;
+            showLevelUpNotification();
+        } else {
+            // Not enough tasks completed at this level
+            const remaining = 5 - completedAtCurrentLevel;
+            alert(`⚠️ Level Up Blocked!\n\nYou have enough XP, but you need to complete ${remaining} more task${remaining > 1 ? 's' : ''} at Level ${player.level} before you can advance to Level ${player.level + 1}.\n\nTasks completed at Level ${player.level}: ${completedAtCurrentLevel}/5`);
+            break; // Stop trying to level up
+        }
     }
 
     updatePlayerStats();
@@ -435,15 +449,19 @@ function checkNPCProximity() {
     }
 }
 
-// Quest Management - now NPC-based
-function createQuest(name, description, npcId, xpReward, irlReward) {
+// Quest Management - enhanced with room and level
+function createQuest(name, description, npcId, room, level, xpReward, irlReward) {
     const quest = {
-        id: Date.now(),
+        id: Date.now() + Math.random(), // Ensure unique ID for multiple simultaneous quests
         name,
         description,
         npcId,
+        room,
+        level: parseInt(level),
         xpReward: parseInt(xpReward),
-        irlReward
+        irlReward,
+        acceptedByPlayer: false, // Quest needs to be accepted before it can be completed
+        completed: false
     };
 
     quests.push(quest);
@@ -458,29 +476,91 @@ function deleteQuest(questId) {
     renderRoom(); // Re-render to update NPC quest indicators
 }
 
+function acceptQuest(quest) {
+    // Mark quest as accepted by player
+    quest.acceptedByPlayer = true;
+
+    // Show acceptance message
+    const npc = NPCS[quest.npcId];
+    const npcName = getNPCName(quest.npcId);
+    alert(`✅ Quest Accepted!\n\n"${quest.name}" has been added to your quest log.\n\nCheck your sidebar to track your active quests!`);
+
+    // Save state
+    saveQuests();
+
+    // Update displays
+    updatePlayerQuestList();
+    renderRoom();
+    hideNPCPanel();
+}
+
 function completeQuest(quest) {
+    // Can only complete accepted quests
+    if (!quest.acceptedByPlayer) {
+        alert('❌ You need to accept this quest first!');
+        return;
+    }
+
+    // Mark quest as completed
+    quest.completed = true;
+
+    // Track completed tasks for this level
+    if (!tasksCompletedAtLevel[quest.level]) {
+        tasksCompletedAtLevel[quest.level] = 0;
+    }
+    tasksCompletedAtLevel[quest.level]++;
+
     addXp(quest.xpReward);
 
     // Show completion message
     const npc = NPCS[quest.npcId];
     const npcName = getNPCName(quest.npcId);
-    let message = `✨ Quest Complete!\n${npc.emoji} ${npcName} is pleased!\n+${quest.xpReward} XP`;
+    const completedCount = tasksCompletedAtLevel[quest.level];
+    let message = `✨ Quest Complete!\n${npc.emoji} ${npcName} is pleased!\n+${quest.xpReward} XP\n\n📊 Level ${quest.level} Progress: ${completedCount}/5 tasks completed`;
     if (quest.irlReward) {
         message += `\n🎁 Reward: ${quest.irlReward}`;
     }
     alert(message);
 
-    // Remove quest
-    deleteQuest(quest.id);
-    hideNPCPanel();
+    // Save state
+    saveQuests();
+    saveTasksCompleted();
+
+    // Update displays
+    updatePlayerQuestList();
+    renderRoom();
+}
+
+// Count incomplete tasks for a specific level
+function getIncompleteTasksForLevel(level) {
+    return quests.filter(q => q.level === level && !q.completed).length;
+}
+
+// Count total incomplete tasks across all levels
+function getTotalIncompleteTasks() {
+    return quests.filter(q => !q.completed).length;
+}
+
+// Validate if we can add tasks to a level (max 5 per level)
+function canAddTasksToLevel(level, count = 1) {
+    const currentCount = getIncompleteTasksForLevel(level);
+    return (currentCount + count) <= 5;
+}
+
+// Check if total incomplete tasks will exceed warning threshold
+function shouldWarnAboutTaskLimit(additionalTasks = 0) {
+    const totalIncomplete = getTotalIncompleteTasks();
+    return (totalIncomplete + additionalTasks) >= 10;
 }
 
 // Show NPC interaction panel
 function showNPCPanel(npcId) {
     const npc = NPCS[npcId];
-    const quest = quests.find(q => q.npcId === npcId);
+    // Find first unaccepted and incomplete quest for this NPC
+    const quest = quests.find(q => q.npcId === npcId && !q.acceptedByPlayer && !q.completed);
 
     currentNPC = npcId;
+    currentQuestInPanel = quest;
 
     // Check if this is first time meeting the pet
     if (npcId === 'pet' && !localStorage.getItem('habitHeroPetNamed')) {
@@ -573,6 +653,51 @@ function promptPetName() {
 function hideNPCPanel() {
     document.getElementById('quest-panel').classList.add('hidden');
     currentNPC = null;
+    currentQuestInPanel = null;
+}
+
+// Update player's quest list in sidebar
+function updatePlayerQuestList() {
+    const listContainer = document.getElementById('player-quest-list');
+
+    // Get accepted but not completed quests
+    const activeQuests = quests.filter(q => q.acceptedByPlayer && !q.completed);
+
+    if (activeQuests.length === 0) {
+        listContainer.innerHTML = '<p style="color: #999; font-size: 14px;">No active quests. Talk to NPCs!</p>';
+        return;
+    }
+
+    listContainer.innerHTML = activeQuests.map(quest => {
+        const npc = NPCS[quest.npcId];
+        const room = ROOMS[quest.room];
+        return `
+            <div class="player-quest-item" style="border: 1px solid #ddd; padding: 8px; margin-bottom: 8px; border-radius: 5px; background: white;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 5px;">
+                    <strong style="font-size: 14px;">${quest.name}</strong>
+                    <span style="font-size: 18px;">${npc.emoji}</span>
+                </div>
+                <div style="font-size: 12px; color: #666; margin-bottom: 5px;">${quest.description}</div>
+                <div style="font-size: 11px; color: #999; margin-bottom: 5px;">
+                    📍 ${room.emoji} ${room.name} • ⭐ Level ${quest.level}
+                </div>
+                <div style="font-size: 11px; color: #4caf50; margin-bottom: 5px;">
+                    🎯 ${quest.xpReward} XP${quest.irlReward ? ' • 🎁 ' + quest.irlReward : ''}
+                </div>
+                <button class="btn btn-primary btn-small" onclick="completeQuestFromList(${quest.id})" style="width: 100%; font-size: 12px; padding: 5px;">
+                    ✓ Complete
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+// Complete a quest from the player's quest list
+function completeQuestFromList(questId) {
+    const quest = quests.find(q => q.id === questId);
+    if (quest) {
+        completeQuest(quest);
+    }
 }
 
 // Parent Mode
@@ -589,6 +714,13 @@ function checkParentPassword() {
     if (input === PARENT_PASSWORD) {
         document.getElementById('parent-password-entry').classList.add('hidden');
         document.getElementById('parent-quest-management').classList.remove('hidden');
+
+        // Initialize multi-quest form if empty
+        const container = document.getElementById('quest-forms-container');
+        if (container.children.length === 0) {
+            addQuestForm();
+        }
+
         updateActiveQuestsList();
         updatePetDropdownName();
     } else {
@@ -609,10 +741,169 @@ function hideParentMode() {
     document.getElementById('parent-panel').classList.add('hidden');
 }
 
+// Multi-quest creation functions
+let questFormCounter = 0;
+
+function createQuestFormHTML(formId) {
+    return `
+        <div class="quest-form-item" id="quest-form-${formId}" style="border: 2px solid #e0e0e0; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fafafa;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4 style="margin: 0;">Quest ${formId + 1}</h4>
+                <button class="btn btn-danger btn-small" onclick="removeQuestForm(${formId})">Remove</button>
+            </div>
+            <div class="form-group">
+                <label>Quest Name:</label>
+                <input type="text" id="quest-name-${formId}" placeholder="e.g., Wash the Dishes">
+            </div>
+            <div class="form-group">
+                <label>Description:</label>
+                <textarea id="quest-description-${formId}" placeholder="What needs to be done?"></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label>Assign to NPC:</label>
+                    <select id="quest-npc-${formId}">
+                        <option value="wizard">🧙 Chef Wizard</option>
+                        <option value="goblin">👹 Laundry Goblin</option>
+                        <option value="pet">🐱 ${getPetName()}</option>
+                        <option value="owl">🦉 Scholar Owl</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Room:</label>
+                    <select id="quest-room-${formId}">
+                        <option value="kitchen">🏠 Kitchen</option>
+                        <option value="basement">🧺 Basement</option>
+                        <option value="petroom">🐾 Pet Room</option>
+                        <option value="study">📚 Study</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label>Level Required:</label>
+                    <input type="number" id="quest-level-${formId}" value="1" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label>XP Reward:</label>
+                    <input type="number" id="quest-xp-${formId}" value="50" min="10" max="500">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>IRL Reward (optional):</label>
+                <input type="text" id="quest-reward-${formId}" placeholder="e.g., 30 min screen time">
+            </div>
+        </div>
+    `;
+}
+
+function addQuestForm() {
+    const container = document.getElementById('quest-forms-container');
+    const formId = questFormCounter++;
+    container.insertAdjacentHTML('beforeend', createQuestFormHTML(formId));
+}
+
+function removeQuestForm(formId) {
+    const formElement = document.getElementById(`quest-form-${formId}`);
+    if (formElement) {
+        formElement.remove();
+    }
+}
+
+function createAllQuestsFromForms() {
+    const container = document.getElementById('quest-forms-container');
+    const forms = container.querySelectorAll('.quest-form-item');
+
+    if (forms.length === 0) {
+        alert('❌ Please add at least one quest form!');
+        return;
+    }
+
+    // Collect all quest data
+    const questsToCreate = [];
+    const errors = [];
+
+    forms.forEach((form, index) => {
+        const formId = form.id.split('-')[2];
+        const name = document.getElementById(`quest-name-${formId}`)?.value.trim();
+        const description = document.getElementById(`quest-description-${formId}`)?.value.trim();
+        const npcId = document.getElementById(`quest-npc-${formId}`)?.value;
+        const room = document.getElementById(`quest-room-${formId}`)?.value;
+        const level = parseInt(document.getElementById(`quest-level-${formId}`)?.value);
+        const xpReward = document.getElementById(`quest-xp-${formId}`)?.value;
+        const irlReward = document.getElementById(`quest-reward-${formId}`)?.value.trim();
+
+        if (!name) {
+            errors.push(`Quest ${index + 1}: Missing name`);
+        }
+        if (!description) {
+            errors.push(`Quest ${index + 1}: Missing description`);
+        }
+
+        if (name && description) {
+            questsToCreate.push({ name, description, npcId, room, level, xpReward, irlReward });
+        }
+    });
+
+    if (errors.length > 0) {
+        alert('❌ Please fix these errors:\n\n' + errors.join('\n'));
+        return;
+    }
+
+    // Validate level limits
+    const questsByLevel = {};
+    questsToCreate.forEach(quest => {
+        if (!questsByLevel[quest.level]) {
+            questsByLevel[quest.level] = [];
+        }
+        questsByLevel[quest.level].push(quest);
+    });
+
+    for (const [level, quests] of Object.entries(questsByLevel)) {
+        const newQuestsCount = quests.length;
+        if (!canAddTasksToLevel(parseInt(level), newQuestsCount)) {
+            const currentCount = getIncompleteTasksForLevel(parseInt(level));
+            alert(`❌ Cannot add all quests!\n\nLevel ${level} will exceed the limit of 5 active tasks.\nCurrent: ${currentCount}\nTrying to add: ${newQuestsCount}\nTotal: ${currentCount + newQuestsCount}\n\nPlease adjust levels or complete some existing tasks.`);
+            return;
+        }
+    }
+
+    // Check total incomplete tasks warning
+    if (shouldWarnAboutTaskLimit(questsToCreate.length)) {
+        const totalIncomplete = getTotalIncompleteTasks();
+        const shouldContinue = confirm(`⚠️ Warning: High Task Load!\n\nYou currently have ${totalIncomplete} incomplete task${totalIncomplete !== 1 ? 's' : ''}.\nYou're about to add ${questsToCreate.length} more quest${questsToCreate.length !== 1 ? 's' : ''}, bringing the total to ${totalIncomplete + questsToCreate.length}.\n\nThis may overwhelm your child. Consider completing some existing tasks first.\n\nDo you want to add these quests anyway?`);
+
+        if (!shouldContinue) {
+            return;
+        }
+    }
+
+    // Create all quests
+    let createdCount = 0;
+    questsToCreate.forEach(quest => {
+        createQuest(quest.name, quest.description, quest.npcId, quest.room, quest.level, quest.xpReward, quest.irlReward);
+        createdCount++;
+    });
+
+    // Clear all forms
+    container.innerHTML = '';
+    questFormCounter = 0;
+
+    // Add one fresh form
+    addQuestForm();
+
+    // Update list
+    updateActiveQuestsList();
+
+    alert(`✅ ${createdCount} quest${createdCount !== 1 ? 's' : ''} created successfully!`);
+}
+
 function createQuestFromForm() {
     const name = document.getElementById('new-quest-name').value.trim();
     const description = document.getElementById('new-quest-description').value.trim();
     const npcId = document.getElementById('new-quest-npc').value;
+    const room = document.getElementById('new-quest-room').value;
+    const level = parseInt(document.getElementById('new-quest-level').value);
     const xpReward = document.getElementById('new-quest-xp').value;
     const irlReward = document.getElementById('new-quest-reward').value.trim();
 
@@ -626,14 +917,23 @@ function createQuestFromForm() {
         return;
     }
 
-    // Check if NPC already has a quest
-    const existingQuest = quests.find(q => q.npcId === npcId);
-    if (existingQuest) {
-        alert(`❌ ${NPCS[npcId].name} already has a quest! Complete or delete it first.`);
+    // Validate: Check if level already has 5 incomplete tasks
+    if (!canAddTasksToLevel(level, 1)) {
+        alert(`❌ Cannot add quest!\n\nLevel ${level} already has 5 incomplete tasks. Each level can only have 5 active tasks at a time.\n\nPlease complete some tasks at Level ${level} or assign this quest to a different level.`);
         return;
     }
 
-    createQuest(name, description, npcId, xpReward, irlReward);
+    // Warning: Check if total incomplete tasks will reach 10
+    if (shouldWarnAboutTaskLimit(1)) {
+        const totalIncomplete = getTotalIncompleteTasks();
+        const shouldContinue = confirm(`⚠️ Warning: High Task Load!\n\nYou currently have ${totalIncomplete} incomplete task${totalIncomplete !== 1 ? 's' : ''} across all levels.\n\nAdding more quests may overwhelm your child. Consider completing some existing tasks first.\n\nDo you want to add this quest anyway?`);
+
+        if (!shouldContinue) {
+            return;
+        }
+    }
+
+    createQuest(name, description, npcId, room, level, xpReward, irlReward);
 
     // Clear form
     document.getElementById('new-quest-name').value = '';
@@ -650,28 +950,81 @@ function createQuestFromForm() {
 function updateActiveQuestsList() {
     const listContainer = document.getElementById('active-quests-list');
 
+    // Separate incomplete and completed quests
+    const incompleteQuests = quests.filter(q => !q.completed);
+    const completedQuests = quests.filter(q => q.completed);
+
     if (quests.length === 0) {
-        listContainer.innerHTML = '<p style="color: #999;">No active quests. Create one above!</p>';
+        listContainer.innerHTML = '<p style="color: #999;">No quests yet. Create one above!</p>';
         return;
     }
 
-    listContainer.innerHTML = quests.map(quest => {
-        const npc = NPCS[quest.npcId];
-        const npcName = getNPCName(quest.npcId);
-        return `
-            <div class="quest-item">
-                <div class="quest-item-header">
-                    <span class="quest-item-title">${quest.name}</span>
-                    <span class="quest-item-npc" style="background: ${npc.color};">
-                        ${npc.emoji} ${npcName}
-                    </span>
+    let html = '';
+
+    // Show incomplete tasks count warning
+    const totalIncomplete = incompleteQuests.length;
+    if (totalIncomplete >= 10) {
+        html += `<div style="background: #ff9800; padding: 10px; border-radius: 5px; margin-bottom: 10px; color: white;">
+            <strong>⚠️ High Task Load!</strong><br>
+            ${totalIncomplete} incomplete tasks. Consider completing some before adding more.
+        </div>`;
+    }
+
+    // Incomplete quests
+    if (incompleteQuests.length > 0) {
+        html += `<h4 style="margin-top: 0;">Incomplete Quests (${incompleteQuests.length})</h4>`;
+        html += incompleteQuests.map(quest => {
+            const npc = NPCS[quest.npcId];
+            const npcName = getNPCName(quest.npcId);
+            const room = ROOMS[quest.room];
+            const incompleteAtLevel = getIncompleteTasksForLevel(quest.level);
+            return `
+                <div class="quest-item">
+                    <div class="quest-item-header">
+                        <span class="quest-item-title">${quest.name}</span>
+                        <span class="quest-item-npc" style="background: ${npc.color};">
+                            ${npc.emoji} ${npcName}
+                        </span>
+                    </div>
+                    <div class="quest-item-description">${quest.description}</div>
+                    <div class="quest-item-meta">
+                        <span>📍 ${room.emoji} ${room.name}</span>
+                        <span>⭐ Level ${quest.level} (${incompleteAtLevel}/5 tasks)</span>
+                    </div>
+                    <div class="quest-item-xp">Reward: ${quest.xpReward} XP${quest.irlReward ? ' + ' + quest.irlReward : ''}</div>
+                    <button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>
                 </div>
-                <div class="quest-item-description">${quest.description}</div>
-                <div class="quest-item-xp">Reward: ${quest.xpReward} XP${quest.irlReward ? ' + ' + quest.irlReward : ''}</div>
-                <button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    }
+
+    // Completed quests (collapsible)
+    if (completedQuests.length > 0) {
+        html += `<h4 style="margin-top: 15px; color: #4caf50;">✅ Completed Quests (${completedQuests.length})</h4>`;
+        html += completedQuests.map(quest => {
+            const npc = NPCS[quest.npcId];
+            const npcName = getNPCName(quest.npcId);
+            const room = ROOMS[quest.room];
+            return `
+                <div class="quest-item" style="opacity: 0.6; background: #e8f5e9;">
+                    <div class="quest-item-header">
+                        <span class="quest-item-title">${quest.name}</span>
+                        <span class="quest-item-npc" style="background: ${npc.color};">
+                            ${npc.emoji} ${npcName}
+                        </span>
+                    </div>
+                    <div class="quest-item-meta">
+                        <span>📍 ${room.emoji} ${room.name}</span>
+                        <span>⭐ Level ${quest.level}</span>
+                        <span style="color: #4caf50;">✅ Completed</span>
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    listContainer.innerHTML = html;
 }
 
 // Keyboard controls
@@ -754,16 +1107,15 @@ function setupEventListeners() {
         if (e.key === 'Enter') checkParentPassword();
     });
 
-    document.getElementById('create-quest-btn').addEventListener('click', createQuestFromForm);
+    // Multi-quest creation buttons
+    document.getElementById('add-quest-form-btn').addEventListener('click', addQuestForm);
+    document.getElementById('create-all-quests-btn').addEventListener('click', createAllQuestsFromForms);
     document.getElementById('close-parent-panel').addEventListener('click', hideParentMode);
 
     // NPC/Quest panel
-    document.getElementById('complete-quest-btn').addEventListener('click', () => {
-        if (currentNPC) {
-            const quest = quests.find(q => q.npcId === currentNPC);
-            if (quest) {
-                completeQuest(quest);
-            }
+    document.getElementById('accept-quest-btn').addEventListener('click', () => {
+        if (currentQuestInPanel) {
+            acceptQuest(currentQuestInPanel);
         }
     });
     document.getElementById('close-quest-btn').addEventListener('click', hideNPCPanel);
@@ -808,6 +1160,17 @@ function loadPetName() {
     const saved = localStorage.getItem('habitHeroPetName');
     if (saved) {
         petName = saved;
+    }
+}
+
+function saveTasksCompleted() {
+    localStorage.setItem('habitHeroTasksCompleted', JSON.stringify(tasksCompletedAtLevel));
+}
+
+function loadTasksCompleted() {
+    const saved = localStorage.getItem('habitHeroTasksCompleted');
+    if (saved) {
+        tasksCompletedAtLevel = JSON.parse(saved);
     }
 }
 
