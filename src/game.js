@@ -44,7 +44,7 @@ if (typeof io !== 'undefined') {
         loadGameState();
         updatePlayerQuestList();
         updatePlayerStats();
-        showNotification('Quest Completed!', 'A quest was completed!', 'success', 3000);
+        // Note: Not showing celebration for remote completions to avoid confusion
     });
     
     socket.on('quest:uncompleted', (data) => {
@@ -335,7 +335,8 @@ const xpBar = document.getElementById('xp-bar');
 const gameWorld = document.getElementById('game-world');
 
 // Quest system - enhanced with room, level, difficulty, and completion tracking
-let quests = []; // Each quest will have { id, npcId, name, description, room, level, difficulty, xpReward, gemReward, irlReward, acceptedByPlayer, completed, isDaily }
+let quests = []; // Each quest will have { id, npcId, name, description, room, level, difficulty, xpReward, gemReward, irlReward, acceptedByPlayer, completed, isDaily, origin }
+// origin can be 'object' (from interactive objects) or 'npc' (from parent-added quests via NPCs)
 let currentNPC = null;
 let currentQuestInPanel = null; // Track which quest is being viewed in the panel
 
@@ -503,6 +504,140 @@ function createGemFloatAnimation(amount) {
     }
 }
 
+// Animate stats box when quest is accepted
+function animateStatsBox() {
+    const statsBox = document.querySelector('.player-stats');
+    if (!statsBox) return;
+    
+    // Remove class if it exists (to restart animation)
+    statsBox.classList.remove('quest-accepted');
+    
+    // Trigger reflow to restart animation
+    void statsBox.offsetWidth;
+    
+    // Add animation class
+    statsBox.classList.add('quest-accepted');
+    
+    // Remove class after animation completes
+    setTimeout(() => {
+        statsBox.classList.remove('quest-accepted');
+    }, 600);
+}
+
+// Create celebration particle effects for quest completion
+function createQuestCompletionCelebration(xpReward, gemReward) {
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    // Emoji options for celebration
+    const celebrationEmojis = ['⭐', '✨', '🎉', '🎊', '💫', '🌟'];
+    const confettiColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
+    
+    // Create star burst at center
+    const starBurst = document.createElement('div');
+    starBurst.className = 'star-burst';
+    starBurst.textContent = '⭐';
+    starBurst.style.left = centerX + 'px';
+    starBurst.style.top = centerY + 'px';
+    document.body.appendChild(starBurst);
+    setTimeout(() => starBurst.remove(), 1000);
+    
+    // Create celebration particles (emojis floating up)
+    const particleCount = 20;
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'celebration-particle';
+        particle.textContent = celebrationEmojis[Math.floor(Math.random() * celebrationEmojis.length)];
+        
+        // Random position around center
+        const angle = (Math.PI * 2 * i) / particleCount;
+        const radius = 50 + Math.random() * 100;
+        const startX = centerX + Math.cos(angle) * radius;
+        const startY = centerY + Math.sin(angle) * radius;
+        
+        particle.style.left = startX + 'px';
+        particle.style.top = startY + 'px';
+        
+        // Random drift
+        const driftX = (Math.random() - 0.5) * 200;
+        particle.style.setProperty('--drift-x', driftX + 'px');
+        
+        // Random delay
+        particle.style.animationDelay = (Math.random() * 0.3) + 's';
+        
+        document.body.appendChild(particle);
+        setTimeout(() => particle.remove(), 2000);
+    }
+    
+    // Create confetti particles
+    const confettiCount = 50;
+    for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti-particle';
+        confetti.style.backgroundColor = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+        
+        // Random position across top of screen
+        const startX = Math.random() * window.innerWidth;
+        confetti.style.left = startX + 'px';
+        confetti.style.top = '0px';
+        
+        // Random drift and size
+        const driftX = (Math.random() - 0.5) * 300;
+        confetti.style.setProperty('--drift-x', driftX + 'px');
+        confetti.style.width = (Math.random() * 10 + 5) + 'px';
+        confetti.style.height = (Math.random() * 10 + 5) + 'px';
+        
+        // Random delay and duration
+        confetti.style.animationDelay = (Math.random() * 0.5) + 's';
+        confetti.style.animationDuration = (2 + Math.random()) + 's';
+        
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 3000);
+    }
+    
+    // Animate the stats box with extra emphasis
+    const statsBox = document.querySelector('.player-stats');
+    if (statsBox) {
+        statsBox.classList.remove('quest-accepted');
+        void statsBox.offsetWidth;
+        statsBox.classList.add('quest-accepted');
+        setTimeout(() => statsBox.classList.remove('quest-accepted'), 600);
+    }
+    
+    // Create XP text floating from center
+    if (xpReward > 0) {
+        const xpText = document.createElement('div');
+        xpText.className = 'celebration-particle';
+        xpText.textContent = `+${xpReward} XP`;
+        xpText.style.fontSize = '36px';
+        xpText.style.fontWeight = 'bold';
+        xpText.style.color = '#FFEB3B';
+        xpText.style.textShadow = '0 0 10px rgba(255, 235, 59, 0.8), 0 2px 4px rgba(0,0,0,0.5)';
+        xpText.style.left = (centerX - 50) + 'px';
+        xpText.style.top = centerY + 'px';
+        xpText.style.setProperty('--drift-x', '-100px');
+        document.body.appendChild(xpText);
+        setTimeout(() => xpText.remove(), 2000);
+    }
+    
+    // Create Gem text floating from center
+    if (gemReward > 0) {
+        const gemText = document.createElement('div');
+        gemText.className = 'celebration-particle';
+        gemText.textContent = `+${gemReward} 💎`;
+        gemText.style.fontSize = '36px';
+        gemText.style.fontWeight = 'bold';
+        gemText.style.color = '#FFD700';
+        gemText.style.textShadow = '0 0 10px rgba(255, 215, 0, 0.8), 0 2px 4px rgba(0,0,0,0.5)';
+        gemText.style.left = (centerX + 50) + 'px';
+        gemText.style.top = centerY + 'px';
+        gemText.style.setProperty('--drift-x', '100px');
+        gemText.style.animationDelay = '0.1s';
+        document.body.appendChild(gemText);
+        setTimeout(() => gemText.remove(), 2000);
+    }
+}
+
 // Daily quest management
 function createDailyQuest(template) {
     const npc = NPCS[template.npcId];
@@ -620,7 +755,7 @@ function showWelcomeModal() {
         currentQuestDiv.innerHTML = `
             <div class="quest-item">
                 <span class="quest-name">${quest.name}</span>
-                <span class="quest-npc">from ${getNPCName(quest.npcId)}</span>
+                <span class="quest-npc">from ${getQuestOriginName(quest)}</span>
                 <span class="quest-difficulty ${quest.difficulty}">${quest.difficulty.toUpperCase()}</span>
                 <div style="margin-top: 8px; color: #666;">
                     Rewards: ${quest.xpReward} XP, ${quest.gemReward} 💎
@@ -640,7 +775,7 @@ function showWelcomeModal() {
         pressingQuestDiv.innerHTML = `
             <div class="quest-item">
                 <span class="quest-name">${pressingQuest.name}</span>
-                <span class="quest-npc">from ${getNPCName(pressingQuest.npcId)}</span>
+                <span class="quest-npc">from ${getQuestOriginName(pressingQuest)}</span>
                 <span class="quest-difficulty ${pressingQuest.difficulty}">${pressingQuest.difficulty.toUpperCase()}</span>
             </div>
         `;
@@ -649,7 +784,7 @@ function showWelcomeModal() {
         pressingQuestDiv.innerHTML = `
             <div class="quest-item">
                 <span class="quest-name">${secondQuest.name}</span>
-                <span class="quest-npc">from ${getNPCName(secondQuest.npcId)}</span>
+                <span class="quest-npc">from ${getQuestOriginName(secondQuest)}</span>
                 <span class="quest-difficulty ${secondQuest.difficulty}">${secondQuest.difficulty.toUpperCase()}</span>
             </div>
         `;
@@ -743,6 +878,52 @@ function getNPCName(npcId) {
         return getPetName();
     }
     return NPCS[npcId].name;
+}
+
+// Get quest origin display name (object name for object quests, NPC name for parent quests)
+function getQuestOriginName(quest) {
+    // If quest has origin field set to 'object', it's from an interactive object
+    if (quest.origin === 'object') {
+        // Map object quest types to display names
+        const objectNames = {
+            dishes: 'Dirty Dishes',
+            counter: 'Kitchen Counter',
+            trash: 'Trash Can',
+            washer: 'Washing Machine',
+            dryer: 'Dryer',
+            basket: 'Laundry Basket',
+            feed: 'Food Bowl',
+            clean: 'Litter Box',
+            play: 'Pet Toys',
+            homework: 'Homework Desk',
+            reading: 'Bookshelf',
+            organize: 'School Bag'
+        };
+        return objectNames[quest.npcId] || 'Object';
+    }
+    
+    // Check if quest.npcId is an object type (for backward compatibility)
+    // If the npcId is not a valid NPC, it's likely an object quest
+    if (!NPCS[quest.npcId]) {
+        const objectNames = {
+            dishes: 'Dirty Dishes',
+            counter: 'Kitchen Counter',
+            trash: 'Trash Can',
+            washer: 'Washing Machine',
+            dryer: 'Dryer',
+            basket: 'Laundry Basket',
+            feed: 'Food Bowl',
+            clean: 'Litter Box',
+            play: 'Pet Toys',
+            homework: 'Homework Desk',
+            reading: 'Bookshelf',
+            organize: 'School Bag'
+        };
+        return objectNames[quest.npcId] || 'Unknown';
+    }
+    
+    // Otherwise, it's from an NPC (parent-added quest)
+    return getNPCName(quest.npcId);
 }
 
 // Switch to a different room
@@ -992,7 +1173,9 @@ function renderRoom() {
             if (typeof soundManager !== 'undefined') {
                 soundManager.playClick();
             }
-            showMainObjectInfo(mainObj);
+            // Show NPC panel instead of generic main object info
+            // This allows parent-created quests to appear when clicking NPCs
+            showNPCPanel(mainObj.type);
         });
         
         npcsContainer.appendChild(objElement);
@@ -1240,7 +1423,7 @@ function checkObjectBump(attemptedX, attemptedY) {
 }
 
 // Quest Management - enhanced with room, level, and difficulty
-function createQuest(name, description, npcId, room, level, difficulty, xpReward, irlReward) {
+function createQuest(name, description, npcId, room, level, difficulty, xpReward, irlReward, origin = 'npc') {
     const gemReward = DIFFICULTY_GEMS[difficulty] || 1; // Default to easy (1 gem) if difficulty not specified
 
     const quest = {
@@ -1255,7 +1438,8 @@ function createQuest(name, description, npcId, room, level, difficulty, xpReward
         gemReward: gemReward,
         irlReward,
         acceptedByPlayer: false, // Quest needs to be accepted before it can be completed
-        completed: false
+        completed: false,
+        origin: origin // 'object' for daily tasks from objects, 'npc' for parent-added quests
     };
 
     quests.push(quest);
@@ -1285,10 +1469,8 @@ function acceptQuest(quest) {
     // Mark quest as accepted by player
     quest.acceptedByPlayer = true;
 
-    // Show acceptance message
-    const npc = NPCS[quest.npcId];
-    const npcName = getNPCName(quest.npcId);
-    showNotification('Quest Accepted', `"${quest.name}" added to your quest log`, 'quest', 3000);
+    // Animate the stats box instead of showing notification
+    animateStatsBox();
 
     // Save state
     saveQuests();
@@ -1326,11 +1508,8 @@ function completeQuest(quest) {
     addXp(quest.xpReward);
     addGems(quest.gemReward);
 
-    // Show completion message
-    const completedCount = tasksCompletedAtLevel[player.level];
-    const difficultyLabel = quest.level === 1 ? 'Easy' : quest.level === 2 ? 'Medium' : 'Hard';
-    let message = `+${quest.xpReward} XP, +${quest.gemReward} Gem${quest.gemReward > 1 ? 's' : ''} • ${completedCount}/15 tasks at Player Level ${player.level}`;
-    showNotification('Quest Complete!', message, 'success', 4000);
+    // Show celebration particles instead of notification
+    createQuestCompletionCelebration(quest.xpReward, quest.gemReward);
     
     // Play quest complete sound
     if (typeof soundManager !== 'undefined') {
@@ -1627,18 +1806,23 @@ function updatePlayerQuestList() {
     }
 
     listContainer.innerHTML = activeQuests.map(quest => {
-        const npc = NPCS[quest.npcId];
         const room = ROOMS[quest.room];
         const difficulty = quest.difficulty || 'easy';
         const difficultyColor = difficulty === 'easy' ? '#4caf50' : difficulty === 'medium' ? '#ff9800' : '#f44336';
         
-        // Get emoji - either from NPC or use a default based on room
+        // Get emoji based on quest origin
         let questEmoji = '📋';
-        if (npc && npc.emoji) {
-            questEmoji = npc.emoji;
-        } else if (room) {
-            questEmoji = room.emoji;
+        if (quest.origin === 'object') {
+            // For object quests, use the room emoji
+            questEmoji = room ? room.emoji : '📋';
+        } else {
+            // For NPC quests, use the NPC emoji
+            const npc = NPCS[quest.npcId];
+            questEmoji = npc ? npc.emoji : (room ? room.emoji : '📋');
         }
+        
+        // Get origin name for display
+        const originName = getQuestOriginName(quest);
         
         return `
             <div class="player-quest-item" style="
@@ -1657,6 +1841,9 @@ function updatePlayerQuestList() {
                     <span style="font-size: 18px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));">${questEmoji}</span>
                 </div>
                 <div style="font-size: 12px; color: #666; margin-bottom: 5px;">${quest.description}</div>
+                <div style="font-size: 11px; color: #888; margin-bottom: 3px;">
+                    👤 From ${originName}
+                </div>
                 <div style="font-size: 11px; color: #999; margin-bottom: 5px;">
                     📍 ${room.emoji} ${room.name} • ⭐ Level ${quest.level} • <span style="color: ${difficultyColor}; font-weight: bold;">${difficulty.toUpperCase()}</span>
                 </div>
@@ -2492,8 +2679,6 @@ function updateActiveQuestsList() {
     if (incompleteQuests.length > 0) {
         html += `<h4 style="margin-top: 0;">Incomplete Quests (${incompleteQuests.length})</h4>`;
         html += incompleteQuests.map(quest => {
-            const npc = NPCS[quest.npcId];
-            const npcName = npc ? getNPCName(quest.npcId) : quest.npcId;
             const room = ROOMS[quest.room];
             const incompleteAtLevel = getIncompleteTasksForLevel(quest.level);
             const isDailyBadge = quest.isDaily ? '<span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px;">📅 Daily</span>' : '';
@@ -2501,16 +2686,28 @@ function updateActiveQuestsList() {
                 ? '<span style="color: #999; font-size: 0.85em;">Resets daily</span>'
                 : `<button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>`;
             
-            // Handle NPC display for object-based quests
+            // Get origin name (object or NPC)
+            const originName = getQuestOriginName(quest);
+            
+            // Handle display based on quest origin
             let npcDisplay = '';
-            if (npc && npc.emoji && npc.color) {
-                npcDisplay = `<span class="quest-item-npc" style="background: ${npc.color};">
-                    ${npc.emoji} ${npcName}
+            if (quest.origin === 'object') {
+                // Object quest - show with room emoji
+                npcDisplay = `<span class="quest-item-npc" style="background: #888;">
+                    ${room.emoji} ${originName}
                 </span>`;
             } else {
-                npcDisplay = `<span class="quest-item-npc" style="background: #999;">
-                    ${room.emoji} ${npcName}
-                </span>`;
+                // NPC quest - show with NPC color
+                const npc = NPCS[quest.npcId];
+                if (npc && npc.emoji && npc.color) {
+                    npcDisplay = `<span class="quest-item-npc" style="background: ${npc.color};">
+                        ${npc.emoji} ${originName}
+                    </span>`;
+                } else {
+                    npcDisplay = `<span class="quest-item-npc" style="background: #999;">
+                        ${room.emoji} ${originName}
+                    </span>`;
+                }
             }
             
             return `
@@ -2535,24 +2732,34 @@ function updateActiveQuestsList() {
     if (completedQuests.length > 0) {
         html += `<h4 style="margin-top: 15px; color: #4caf50;">✅ Completed Quests (${completedQuests.length})</h4>`;
         html += completedQuests.map(quest => {
-            const npc = NPCS[quest.npcId];
-            const npcName = npc ? getNPCName(quest.npcId) : quest.npcId;
             const room = ROOMS[quest.room];
             const isDailyBadge = quest.isDaily ? '<span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px;">📅 Daily</span>' : '';
             const deleteButton = quest.isDaily 
                 ? '<span style="color: #999; font-size: 0.85em;">Resets daily</span>'
                 : `<button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>`;
             
-            // Handle NPC display for object-based quests
+            // Get origin name (object or NPC)
+            const originName = getQuestOriginName(quest);
+            
+            // Handle display based on quest origin
             let npcDisplay = '';
-            if (npc && npc.emoji && npc.color) {
-                npcDisplay = `<span class="quest-item-npc" style="background: ${npc.color};">
-                    ${npc.emoji} ${npcName}
+            if (quest.origin === 'object') {
+                // Object quest - show with room emoji
+                npcDisplay = `<span class="quest-item-npc" style="background: #888;">
+                    ${room.emoji} ${originName}
                 </span>`;
             } else {
-                npcDisplay = `<span class="quest-item-npc" style="background: #999;">
-                    ${room.emoji} ${npcName}
-                </span>`;
+                // NPC quest - show with NPC color
+                const npc = NPCS[quest.npcId];
+                if (npc && npc.emoji && npc.color) {
+                    npcDisplay = `<span class="quest-item-npc" style="background: ${npc.color};">
+                        ${npc.emoji} ${originName}
+                    </span>`;
+                } else {
+                    npcDisplay = `<span class="quest-item-npc" style="background: #999;">
+                        ${room.emoji} ${originName}
+                    </span>`;
+                }
             }
             
             return `
@@ -2576,6 +2783,23 @@ function updateActiveQuestsList() {
 }
 
 // Keyboard controls
+// Check if any modal or panel is currently open
+function isModalOpen() {
+    const modalIds = [
+        'quest-panel',
+        'parent-panel',
+        'reward-vault-panel',
+        'welcome-modal',
+        'help-modal',
+        'template-modal'
+    ];
+    
+    return modalIds.some(id => {
+        const element = document.getElementById(id);
+        return element && !element.classList.contains('hidden');
+    });
+}
+
 const keys = {};
 
 document.addEventListener('keydown', (e) => {
@@ -2593,6 +2817,11 @@ document.addEventListener('keyup', (e) => {
 });
 
 function handleMovement() {
+    // Don't allow movement if any modal is open
+    if (isModalOpen()) {
+        return;
+    }
+    
     if (keys['ArrowUp']) {
         movePlayer(0, -MOVE_SPEED);
     }
@@ -2609,6 +2838,11 @@ function handleMovement() {
 
 // Click/Tap to move
 gameWorld.addEventListener('click', (e) => {
+    // Don't allow movement if any modal is open
+    if (isModalOpen()) {
+        return;
+    }
+    
     // Handle clicks on interactive objects - auto-interact
     if (e.target.classList.contains('interactive-object') || e.target.closest('.interactive-object')) {
         // The click event on the object itself will handle the interaction
@@ -2751,15 +2985,16 @@ function setupEventListeners() {
                     currentQuestInPanel.level,
                     currentQuestInPanel.difficulty,
                     currentQuestInPanel.xpReward,
-                    '' // No IRL reward for object quests
+                    '', // No IRL reward for object quests
+                    'object' // Origin: from interactive object
                 );
                 // The quest is created with acceptedByPlayer: false
                 // Now we need to mark it as accepted
                 quest.acceptedByPlayer = true;
                 saveQuests();
                 
-                // Show acceptance message
-                showNotification('Quest Accepted', `"${quest.name}" added to your quest log`, 'quest', 3000);
+                // Animate the stats box instead of showing notification
+                animateStatsBox();
                 
                 // Update displays - force a complete refresh
                 updatePlayerQuestList();

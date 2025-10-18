@@ -127,6 +127,33 @@ body {
                 inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
+/* Quest Acceptance Animation */
+.player-stats.quest-accepted {
+    animation: questAcceptPulse 0.6s ease-out;
+}
+
+@keyframes questAcceptPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4),
+                    0 4px 10px rgba(118, 75, 162, 0.3),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    50% {
+        transform: scale(1.08);
+        box-shadow: 0 12px 40px rgba(102, 126, 234, 0.8),
+                    0 8px 25px rgba(118, 75, 162, 0.6),
+                    inset 0 2px 0 rgba(255, 255, 255, 0.3),
+                    0 0 20px rgba(255, 215, 0, 0.6);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4),
+                    0 4px 10px rgba(118, 75, 162, 0.3),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+}
+
 .stat-row {
     display: flex;
     justify-content: space-between;
@@ -1605,6 +1632,74 @@ body {
     100% {
         opacity: 0;
         transform: translateY(-200px) scale(0.8) rotate(360deg);
+    }
+}
+
+/* Quest Completion Celebration Particles */
+.celebration-particle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    font-size: 32px;
+    animation: celebrationFloat 2s ease-out forwards;
+}
+
+@keyframes celebrationFloat {
+    0% {
+        opacity: 1;
+        transform: translateY(0) translateX(0) scale(0.5) rotate(0deg);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-150px) translateX(var(--drift-x)) scale(1.2) rotate(180deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-300px) translateX(var(--drift-x)) scale(0.8) rotate(360deg);
+    }
+}
+
+.confetti-particle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    width: 10px;
+    height: 10px;
+    animation: confettiFall 2.5s ease-out forwards;
+}
+
+@keyframes confettiFall {
+    0% {
+        opacity: 1;
+        transform: translateY(0) translateX(0) rotate(0deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(600px) translateX(var(--drift-x)) rotate(720deg);
+    }
+}
+
+.star-burst {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    font-size: 48px;
+    animation: starBurst 1s ease-out forwards;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+}
+
+@keyframes starBurst {
+    0% {
+        opacity: 1;
+        transform: scale(0) rotate(0deg);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.5) rotate(180deg);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(2) rotate(360deg);
     }
 }
 
