@@ -1377,15 +1377,47 @@ body {
 }
 
 .template-category {
-    margin-bottom: 30px;
+    margin-bottom: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
 }
 
-.template-category h4 {
+.template-category-header {
     color: #667eea;
     font-size: 1.2em;
-    margin-bottom: 15px;
-    padding-bottom: 8px;
+    margin: 0;
+    padding: 15px 20px;
+    background: #f9f9ff;
     border-bottom: 2px solid #e0e0e0;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.template-category-header:hover {
+    background: #f0f0ff;
+}
+
+.template-category-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    padding: 0 15px;
+}
+
+.template-category.expanded .template-category-content {
+    padding: 15px;
+}
+
+.category-toggle {
+    font-size: 0.8em;
+    color: #999;
+    transition: transform 0.3s;
 }
 
 .template-item {
