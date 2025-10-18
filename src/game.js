@@ -5,6 +5,13 @@ const WORLD_HEIGHT = 600;
 const MOVE_SPEED = TILE_SIZE;
 const PARENT_PASSWORD = 'hero123'; // Default password - can be changed
 
+// Reward Vault configuration
+const DIFFICULTY_GEMS = {
+    easy: 1,
+    medium: 2,
+    hard: 3
+};
+
 // Room definitions
 const ROOMS = {
     kitchen: {
@@ -112,6 +119,7 @@ const player = {
     y: 0,
     level: 1,
     xp: 0,
+    gems: 0, // Total gems collected
     currentRoom: 'kitchen',
     element: document.getElementById('player')
 };
@@ -154,20 +162,63 @@ const xpNeededDisplay = document.getElementById('xp-needed');
 const xpBar = document.getElementById('xp-bar');
 const gameWorld = document.getElementById('game-world');
 
-// Quest system - enhanced with room, level, and completion tracking
-let quests = []; // Each quest will have { id, npcId, name, description, room, level, xpReward, irlReward, acceptedByPlayer, completed }
+// Quest system - enhanced with room, level, difficulty, and completion tracking
+let quests = []; // Each quest will have { id, npcId, name, description, room, level, difficulty, xpReward, gemReward, irlReward, acceptedByPlayer, completed }
 let currentNPC = null;
 let currentQuestInPanel = null; // Track which quest is being viewed in the panel
 let tasksCompletedAtLevel = {}; // Track completed tasks per level { level: count }
 
+// Reward Vault system
+let vaultRewards = []; // Parent-defined rewards { id, name, gemCost, unlocked, claimed }
+
 // Pet customization
 let petName = 'Fluffy'; // Default name
+
+// Notification System
+function showNotification(title, message, type = 'info', duration = 3000) {
+    const container = document.getElementById('notification-container');
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: '💡',
+        gem: '💎',
+        level: '🎉',
+        quest: '📜'
+    };
+
+    const icon = icons[type] || icons.info;
+
+    notification.innerHTML = `
+        <div class="notification-icon">${icon}</div>
+        <div class="notification-content">
+            <div class="notification-title">${title}</div>
+            ${message ? `<div class="notification-message">${message}</div>` : ''}
+        </div>
+    `;
+
+    container.appendChild(notification);
+
+    // Auto-remove after duration
+    setTimeout(() => {
+        notification.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 300);
+    }, duration);
+}
 
 // Initialize game
 function init() {
     loadGameState();
     loadPetName();
     loadTasksCompleted();
+    loadRewardVault();
     updatePlayerStats();
     updatePlayerQuestList();
     switchRoom(player.currentRoom);
@@ -177,6 +228,7 @@ function init() {
     console.log('🚪 Walk through doors to explore different rooms!');
     console.log('👨‍👩‍👧 Parents: Click "Parent Mode" to create quests');
     console.log('🧒 Kids: Talk to NPCs to get quests!');
+    console.log('💎 Collect gems from quests to unlock rewards!');
 }
 
 // Get the current pet name
@@ -317,6 +369,12 @@ function updatePlayerStats() {
     // Update XP bar
     const xpPercent = (player.xp / xpNeeded) * 100;
     xpBar.style.width = xpPercent + '%';
+
+    // Update gems display
+    const playerGemsDisplay = document.getElementById('player-gems');
+    if (playerGemsDisplay) {
+        playerGemsDisplay.textContent = player.gems;
+    }
 }
 
 // Add XP and check for level up
@@ -336,7 +394,7 @@ function addXp(amount) {
         } else {
             // Not enough tasks completed at this level
             const remaining = 5 - completedAtCurrentLevel;
-            alert(`⚠️ Level Up Blocked!\n\nYou have enough XP, but you need to complete ${remaining} more task${remaining > 1 ? 's' : ''} at Level ${player.level} before you can advance to Level ${player.level + 1}.\n\nTasks completed at Level ${player.level}: ${completedAtCurrentLevel}/5`);
+            showNotification('Level Up Blocked', `Complete ${remaining} more task${remaining > 1 ? 's' : ''} at Level ${player.level} to advance`, 'warning', 4000);
             break; // Stop trying to level up
         }
     }
@@ -345,9 +403,33 @@ function addXp(amount) {
     saveGameState();
 }
 
+// Add gems to player's vault
+function addGems(amount) {
+    player.gems += amount;
+    saveGameState();
+}
+
+// Check if any rewards should be unlocked based on current gem count
+function checkRewardUnlocks() {
+    let newlyUnlocked = [];
+
+    vaultRewards.forEach(reward => {
+        if (!reward.unlocked && player.gems >= reward.gemCost) {
+            reward.unlocked = true;
+            newlyUnlocked.push(reward);
+        }
+    });
+
+    if (newlyUnlocked.length > 0) {
+        saveRewardVault();
+        const rewardNames = newlyUnlocked.map(r => r.name).join(', ');
+        showNotification('Reward Unlocked!', `${rewardNames} - Check your Reward Vault!`, 'gem', 4000);
+    }
+}
+
 // Show level up notification
 function showLevelUpNotification() {
-    alert(`🎉 LEVEL UP! You are now Level ${player.level}!`);
+    showNotification('LEVEL UP!', `You are now Level ${player.level}!`, 'level', 4000);
 }
 
 // Update player position
@@ -449,8 +531,10 @@ function checkNPCProximity() {
     }
 }
 
-// Quest Management - enhanced with room and level
-function createQuest(name, description, npcId, room, level, xpReward, irlReward) {
+// Quest Management - enhanced with room, level, and difficulty
+function createQuest(name, description, npcId, room, level, difficulty, xpReward, irlReward) {
+    const gemReward = DIFFICULTY_GEMS[difficulty] || 1; // Default to easy (1 gem) if difficulty not specified
+
     const quest = {
         id: Date.now() + Math.random(), // Ensure unique ID for multiple simultaneous quests
         name,
@@ -458,7 +542,9 @@ function createQuest(name, description, npcId, room, level, xpReward, irlReward)
         npcId,
         room,
         level: parseInt(level),
+        difficulty: difficulty || 'easy',
         xpReward: parseInt(xpReward),
+        gemReward: gemReward,
         irlReward,
         acceptedByPlayer: false, // Quest needs to be accepted before it can be completed
         completed: false
@@ -483,7 +569,7 @@ function acceptQuest(quest) {
     // Show acceptance message
     const npc = NPCS[quest.npcId];
     const npcName = getNPCName(quest.npcId);
-    alert(`✅ Quest Accepted!\n\n"${quest.name}" has been added to your quest log.\n\nCheck your sidebar to track your active quests!`);
+    showNotification('Quest Accepted', `"${quest.name}" added to your quest log`, 'quest', 3000);
 
     // Save state
     saveQuests();
@@ -497,7 +583,7 @@ function acceptQuest(quest) {
 function completeQuest(quest) {
     // Can only complete accepted quests
     if (!quest.acceptedByPlayer) {
-        alert('❌ You need to accept this quest first!');
+        showNotification('Cannot Complete', 'You need to accept this quest first!', 'error', 3000);
         return;
     }
 
@@ -510,17 +596,16 @@ function completeQuest(quest) {
     }
     tasksCompletedAtLevel[quest.level]++;
 
+    // Award XP and gems
     addXp(quest.xpReward);
+    addGems(quest.gemReward);
 
     // Show completion message
     const npc = NPCS[quest.npcId];
     const npcName = getNPCName(quest.npcId);
     const completedCount = tasksCompletedAtLevel[quest.level];
-    let message = `✨ Quest Complete!\n${npc.emoji} ${npcName} is pleased!\n+${quest.xpReward} XP\n\n📊 Level ${quest.level} Progress: ${completedCount}/5 tasks completed`;
-    if (quest.irlReward) {
-        message += `\n🎁 Reward: ${quest.irlReward}`;
-    }
-    alert(message);
+    let message = `+${quest.xpReward} XP, +${quest.gemReward} Gem${quest.gemReward > 1 ? 's' : ''} • ${completedCount}/5 tasks at Level ${quest.level}`;
+    showNotification('Quest Complete!', message, 'success', 4000);
 
     // Save state
     saveQuests();
@@ -528,7 +613,9 @@ function completeQuest(quest) {
 
     // Update displays
     updatePlayerQuestList();
+    updatePlayerStats();
     renderRoom();
+    checkRewardUnlocks(); // Check if any rewards were unlocked
 }
 
 // Count incomplete tasks for a specific level
@@ -601,7 +688,16 @@ function showNPCPanel(npcId) {
         document.getElementById('npc-dialogue').textContent = npc.dialogue;
         document.getElementById('quest-title').textContent = quest.name;
         document.getElementById('quest-description').textContent = quest.description;
+
+        // Display difficulty
+        const difficultyBadge = document.getElementById('quest-difficulty');
+        const difficulty = quest.difficulty || 'easy';
+        difficultyBadge.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+        difficultyBadge.className = 'difficulty-badge difficulty-' + difficulty;
+
+        // Display rewards
         document.getElementById('quest-xp').textContent = quest.xpReward + ' XP';
+        document.getElementById('quest-gems').textContent = quest.gemReward || DIFFICULTY_GEMS[difficulty] || 1;
 
         const irlRewardContainer = document.getElementById('quest-irl-reward-container');
         if (quest.irlReward) {
@@ -643,10 +739,12 @@ function promptPetName() {
 
         // Re-render room to update NPC if visible
         renderRoom();
+        showNotification('Pet Named!', `Say hello to ${petName}!`, 'success', 3000);
     } else if (!localStorage.getItem('habitHeroPetNamed')) {
-        // First time and they cancelled - try again
-        alert('Your cat needs a name!');
-        promptPetName();
+        // First time and they cancelled - use default name
+        localStorage.setItem('habitHeroPetNamed', 'true');
+        savePetName();
+        showNPCPanel('pet');
     }
 }
 
@@ -671,6 +769,8 @@ function updatePlayerQuestList() {
     listContainer.innerHTML = activeQuests.map(quest => {
         const npc = NPCS[quest.npcId];
         const room = ROOMS[quest.room];
+        const difficulty = quest.difficulty || 'easy';
+        const difficultyColor = difficulty === 'easy' ? '#4caf50' : difficulty === 'medium' ? '#ff9800' : '#f44336';
         return `
             <div class="player-quest-item" style="border: 1px solid #ddd; padding: 8px; margin-bottom: 8px; border-radius: 5px; background: white;">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 5px;">
@@ -679,10 +779,10 @@ function updatePlayerQuestList() {
                 </div>
                 <div style="font-size: 12px; color: #666; margin-bottom: 5px;">${quest.description}</div>
                 <div style="font-size: 11px; color: #999; margin-bottom: 5px;">
-                    📍 ${room.emoji} ${room.name} • ⭐ Level ${quest.level}
+                    📍 ${room.emoji} ${room.name} • ⭐ Level ${quest.level} • <span style="color: ${difficultyColor}; font-weight: bold;">${difficulty.toUpperCase()}</span>
                 </div>
                 <div style="font-size: 11px; color: #4caf50; margin-bottom: 5px;">
-                    🎯 ${quest.xpReward} XP${quest.irlReward ? ' • 🎁 ' + quest.irlReward : ''}
+                    🎯 ${quest.xpReward} XP • 💎 ${quest.gemReward || DIFFICULTY_GEMS[difficulty] || 1} Gems${quest.irlReward ? ' • 🎁 ' + quest.irlReward : ''}
                 </div>
                 <button class="btn btn-primary btn-small" onclick="completeQuestFromList(${quest.id})" style="width: 100%; font-size: 12px; padding: 5px;">
                     ✓ Complete
@@ -698,6 +798,176 @@ function completeQuestFromList(questId) {
     if (quest) {
         completeQuest(quest);
     }
+}
+
+// Reward Vault Management
+function createReward(name, gemCost) {
+    const reward = {
+        id: Date.now() + Math.random(),
+        name: name.trim(),
+        gemCost: parseInt(gemCost),
+        unlocked: false,
+        claimed: false
+    };
+
+    vaultRewards.push(reward);
+    saveRewardVault();
+
+    // Check if it should be unlocked immediately
+    if (player.gems >= reward.gemCost) {
+        reward.unlocked = true;
+        saveRewardVault();
+    }
+
+    return reward;
+}
+
+function deleteReward(rewardId) {
+    vaultRewards = vaultRewards.filter(r => r.id !== rewardId);
+    saveRewardVault();
+}
+
+function claimReward(rewardId) {
+    const reward = vaultRewards.find(r => r.id === rewardId);
+    if (!reward) {
+        showNotification('Error', 'Reward not found!', 'error', 3000);
+        return;
+    }
+
+    if (!reward.unlocked) {
+        showNotification('Locked', `Need ${reward.gemCost - player.gems} more gems to unlock`, 'warning', 3000);
+        return;
+    }
+
+    if (reward.claimed) {
+        showNotification('Already Claimed', 'You already claimed this reward!', 'info', 3000);
+        return;
+    }
+
+    // Mark as claimed
+    reward.claimed = true;
+    saveRewardVault();
+
+    showNotification('Reward Claimed!', `"${reward.name}" - Show your parents!`, 'success', 5000);
+    updateVaultRewardsList();
+}
+
+function showRewardVault() {
+    document.getElementById('reward-vault-panel').classList.remove('hidden');
+    updateVaultRewardsList();
+}
+
+function hideRewardVault() {
+    document.getElementById('reward-vault-panel').classList.add('hidden');
+}
+
+// Help Modal Functions
+function showHelpModal() {
+    document.getElementById('help-modal').classList.remove('hidden');
+}
+
+function hideHelpModal() {
+    document.getElementById('help-modal').classList.add('hidden');
+}
+
+function updateVaultRewardsList() {
+    const listContainer = document.getElementById('vault-rewards-list');
+    const gemCountDisplay = document.getElementById('vault-gem-count');
+
+    // Update gem count
+    gemCountDisplay.textContent = player.gems;
+
+    if (vaultRewards.length === 0) {
+        listContainer.innerHTML = '<p style="color: #999;">No rewards available yet. Ask your parents to add some!</p>';
+        return;
+    }
+
+    // Sort rewards: unlocked unclaimed first, then locked, then claimed
+    const sortedRewards = [...vaultRewards].sort((a, b) => {
+        if (a.claimed !== b.claimed) return a.claimed ? 1 : -1;
+        if (a.unlocked !== b.unlocked) return b.unlocked ? 1 : -1;
+        return a.gemCost - b.gemCost;
+    });
+
+    listContainer.innerHTML = sortedRewards.map(reward => {
+        const isLocked = !reward.unlocked;
+        const isClaimed = reward.claimed;
+        const canClaim = reward.unlocked && !reward.claimed;
+
+        let statusBadge = '';
+        let buttonHtml = '';
+
+        if (isClaimed) {
+            statusBadge = '<span style="color: #4caf50; font-weight: bold;">✅ CLAIMED</span>';
+            buttonHtml = '<button class="btn btn-secondary btn-small" disabled style="width: 100%;">Already Claimed</button>';
+        } else if (isLocked) {
+            const gemsNeeded = reward.gemCost - player.gems;
+            statusBadge = `<span style="color: #999; font-weight: bold;">🔒 LOCKED (Need ${gemsNeeded} more gems)</span>`;
+            buttonHtml = '<button class="btn btn-secondary btn-small" disabled style="width: 100%;">Locked</button>';
+        } else {
+            statusBadge = '<span style="color: #ffd700; font-weight: bold;">✨ UNLOCKED!</span>';
+            buttonHtml = `<button class="btn btn-primary btn-small" onclick="claimReward(${reward.id})" style="width: 100%;">Claim Reward</button>`;
+        }
+
+        return `
+            <div class="reward-vault-item" style="border: 2px solid ${isClaimed ? '#4caf50' : isLocked ? '#ccc' : '#ffd700'}; padding: 12px; margin-bottom: 12px; border-radius: 8px; background: ${isClaimed ? '#f1f8f4' : isLocked ? '#f5f5f5' : '#fffbf0'}; opacity: ${isClaimed ? 0.7 : 1};">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong style="font-size: 16px;">${reward.name}</strong>
+                    ${statusBadge}
+                </div>
+                <div style="font-size: 14px; color: #666; margin-bottom: 8px;">
+                    💎 Cost: ${reward.gemCost} gems
+                </div>
+                ${buttonHtml}
+            </div>
+        `;
+    }).join('');
+}
+
+function updateParentRewardsList() {
+    const listContainer = document.getElementById('parent-rewards-list');
+
+    if (vaultRewards.length === 0) {
+        listContainer.innerHTML = '<p style="color: #999;">No rewards yet. Create one above!</p>';
+        return;
+    }
+
+    listContainer.innerHTML = vaultRewards.map(reward => {
+        const statusText = reward.claimed ? '✅ Claimed' : reward.unlocked ? '✨ Unlocked' : '🔒 Locked';
+        return `
+            <div class="quest-item" style="background: ${reward.claimed ? '#f1f8f4' : reward.unlocked ? '#fffbf0' : 'white'};">
+                <div class="quest-item-header">
+                    <span class="quest-item-title">${reward.name}</span>
+                    <span style="font-size: 12px; color: #666;">${statusText}</span>
+                </div>
+                <div class="quest-item-meta">
+                    <span>💎 ${reward.gemCost} gems</span>
+                </div>
+                <button class="btn btn-danger btn-small" onclick="deleteReward(${reward.id}); updateParentRewardsList();">Delete</button>
+            </div>
+        `;
+    }).join('');
+}
+
+function createRewardFromForm() {
+    const name = document.getElementById('new-reward-name').value.trim();
+    const gemCost = document.getElementById('new-reward-gems').value;
+
+    if (!name) {
+        showNotification('Missing Name', 'Please enter a reward name', 'error', 3000);
+        return;
+    }
+
+    createReward(name, gemCost);
+
+    // Clear form
+    document.getElementById('new-reward-name').value = '';
+    document.getElementById('new-reward-gems').value = '10';
+
+    // Update list
+    updateParentRewardsList();
+
+    showNotification('Reward Created', `"${name}" added to vault`, 'success', 3000);
 }
 
 // Parent Mode
@@ -722,9 +992,10 @@ function checkParentPassword() {
         }
 
         updateActiveQuestsList();
+        updateParentRewardsList();
         updatePetDropdownName();
     } else {
-        alert('❌ Incorrect password!');
+        showNotification('Incorrect Password', 'Please try again', 'error', 3000);
         document.getElementById('parent-password-input').value = '';
     }
 }
@@ -779,10 +1050,18 @@ function createQuestFormHTML(formId) {
                     </select>
                 </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                 <div class="form-group">
                     <label>Level Required:</label>
                     <input type="number" id="quest-level-${formId}" value="1" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Difficulty:</label>
+                    <select id="quest-difficulty-${formId}">
+                        <option value="easy">Easy (1 💎)</option>
+                        <option value="medium" selected>Medium (2 💎)</option>
+                        <option value="hard">Hard (3 💎)</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>XP Reward:</label>
@@ -815,7 +1094,7 @@ function createAllQuestsFromForms() {
     const forms = container.querySelectorAll('.quest-form-item');
 
     if (forms.length === 0) {
-        alert('❌ Please add at least one quest form!');
+        showNotification('No Quests', 'Please add at least one quest form', 'warning', 3000);
         return;
     }
 
@@ -830,6 +1109,7 @@ function createAllQuestsFromForms() {
         const npcId = document.getElementById(`quest-npc-${formId}`)?.value;
         const room = document.getElementById(`quest-room-${formId}`)?.value;
         const level = parseInt(document.getElementById(`quest-level-${formId}`)?.value);
+        const difficulty = document.getElementById(`quest-difficulty-${formId}`)?.value;
         const xpReward = document.getElementById(`quest-xp-${formId}`)?.value;
         const irlReward = document.getElementById(`quest-reward-${formId}`)?.value.trim();
 
@@ -841,12 +1121,12 @@ function createAllQuestsFromForms() {
         }
 
         if (name && description) {
-            questsToCreate.push({ name, description, npcId, room, level, xpReward, irlReward });
+            questsToCreate.push({ name, description, npcId, room, level, difficulty, xpReward, irlReward });
         }
     });
 
     if (errors.length > 0) {
-        alert('❌ Please fix these errors:\n\n' + errors.join('\n'));
+        showNotification('Form Errors', errors.join(', '), 'error', 4000);
         return;
     }
 
@@ -863,7 +1143,7 @@ function createAllQuestsFromForms() {
         const newQuestsCount = quests.length;
         if (!canAddTasksToLevel(parseInt(level), newQuestsCount)) {
             const currentCount = getIncompleteTasksForLevel(parseInt(level));
-            alert(`❌ Cannot add all quests!\n\nLevel ${level} will exceed the limit of 5 active tasks.\nCurrent: ${currentCount}\nTrying to add: ${newQuestsCount}\nTotal: ${currentCount + newQuestsCount}\n\nPlease adjust levels or complete some existing tasks.`);
+            showNotification('Too Many Tasks', `Level ${level} would exceed 5 task limit. Current: ${currentCount}, trying to add: ${newQuestsCount}`, 'warning', 5000);
             return;
         }
     }
@@ -881,7 +1161,7 @@ function createAllQuestsFromForms() {
     // Create all quests
     let createdCount = 0;
     questsToCreate.forEach(quest => {
-        createQuest(quest.name, quest.description, quest.npcId, quest.room, quest.level, quest.xpReward, quest.irlReward);
+        createQuest(quest.name, quest.description, quest.npcId, quest.room, quest.level, quest.difficulty, quest.xpReward, quest.irlReward);
         createdCount++;
     });
 
@@ -895,7 +1175,7 @@ function createAllQuestsFromForms() {
     // Update list
     updateActiveQuestsList();
 
-    alert(`✅ ${createdCount} quest${createdCount !== 1 ? 's' : ''} created successfully!`);
+    showNotification('Quests Created', `${createdCount} quest${createdCount !== 1 ? 's' : ''} added successfully`, 'success', 3000);
 }
 
 function createQuestFromForm() {
@@ -908,25 +1188,25 @@ function createQuestFromForm() {
     const irlReward = document.getElementById('new-quest-reward').value.trim();
 
     if (!name) {
-        alert('❌ Please enter a quest name!');
+        showNotification('Missing Name', 'Please enter a quest name', 'error', 3000);
         return;
     }
 
     if (!description) {
-        alert('❌ Please enter a quest description!');
+        showNotification('Missing Description', 'Please enter a quest description', 'error', 3000);
         return;
     }
 
     // Validate: Check if level already has 5 incomplete tasks
     if (!canAddTasksToLevel(level, 1)) {
-        alert(`❌ Cannot add quest!\n\nLevel ${level} already has 5 incomplete tasks. Each level can only have 5 active tasks at a time.\n\nPlease complete some tasks at Level ${level} or assign this quest to a different level.`);
+        showNotification('Level Full', `Level ${level} already has 5 tasks. Complete some first or use a different level.`, 'warning', 4000);
         return;
     }
 
     // Warning: Check if total incomplete tasks will reach 10
     if (shouldWarnAboutTaskLimit(1)) {
         const totalIncomplete = getTotalIncompleteTasks();
-        const shouldContinue = confirm(`⚠️ Warning: High Task Load!\n\nYou currently have ${totalIncomplete} incomplete task${totalIncomplete !== 1 ? 's' : ''} across all levels.\n\nAdding more quests may overwhelm your child. Consider completing some existing tasks first.\n\nDo you want to add this quest anyway?`);
+        const shouldContinue = confirm(`⚠️ Warning: You have ${totalIncomplete} incomplete tasks. Adding more may overwhelm your child. Continue?`);
 
         if (!shouldContinue) {
             return;
@@ -944,7 +1224,7 @@ function createQuestFromForm() {
     // Update list
     updateActiveQuestsList();
 
-    alert('✅ Quest created successfully!');
+    showNotification('Quest Created', 'Quest added successfully', 'success', 3000);
 }
 
 function updateActiveQuestsList() {
@@ -1112,6 +1392,15 @@ function setupEventListeners() {
     document.getElementById('create-all-quests-btn').addEventListener('click', createAllQuestsFromForms);
     document.getElementById('close-parent-panel').addEventListener('click', hideParentMode);
 
+    // Reward Vault buttons
+    document.getElementById('reward-vault-btn').addEventListener('click', showRewardVault);
+    document.getElementById('close-vault-btn').addEventListener('click', hideRewardVault);
+    document.getElementById('create-reward-btn').addEventListener('click', createRewardFromForm);
+
+    // Help modal buttons
+    document.getElementById('help-btn').addEventListener('click', showHelpModal);
+    document.getElementById('close-help-btn').addEventListener('click', hideHelpModal);
+
     // NPC/Quest panel
     document.getElementById('accept-quest-btn').addEventListener('click', () => {
         if (currentQuestInPanel) {
@@ -1127,6 +1416,7 @@ function saveGameState() {
     localStorage.setItem('habitHeroPlayer', JSON.stringify({
         level: player.level,
         xp: player.xp,
+        gems: player.gems,
         currentRoom: player.currentRoom
     }));
 }
@@ -1137,6 +1427,7 @@ function loadGameState() {
         const data = JSON.parse(saved);
         player.level = data.level || 1;
         player.xp = data.xp || 0;
+        player.gems = data.gems || 0;
         player.currentRoom = data.currentRoom || 'kitchen';
     }
 }
@@ -1171,6 +1462,17 @@ function loadTasksCompleted() {
     const saved = localStorage.getItem('habitHeroTasksCompleted');
     if (saved) {
         tasksCompletedAtLevel = JSON.parse(saved);
+    }
+}
+
+function saveRewardVault() {
+    localStorage.setItem('habitHeroRewardVault', JSON.stringify(vaultRewards));
+}
+
+function loadRewardVault() {
+    const saved = localStorage.getItem('habitHeroRewardVault');
+    if (saved) {
+        vaultRewards = JSON.parse(saved);
     }
 }
 

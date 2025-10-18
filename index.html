@@ -29,6 +29,10 @@
                 <div class="xp-bar-container">
                     <div id="xp-bar" class="xp-bar"></div>
                 </div>
+                <div class="stat-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                    <span class="stat-label">💎 Gems:</span>
+                    <span id="player-gems" class="stat-value" style="color: #ffd700;">0</span>
+                </div>
             </div>
 
             <!-- Active Quests -->
@@ -39,19 +43,19 @@
                 </div>
             </div>
 
-            <!-- Controls Info -->
-            <div class="info">
-                <h3>Controls</h3>
-                <p>🚪 Walk through doors to explore!</p>
-                <p>💬 Talk to NPCs to get quests!</p>
-                <p>⌨️ Arrow keys or click to move</p>
-            </div>
+            <!-- Help Icon -->
+            <button id="help-btn" class="help-btn" title="Show Controls">
+                ❓ Help
+            </button>
 
             <!-- Current Room -->
             <div class="current-location">
                 <h3>Current Room</h3>
                 <p><span id="current-room">Kitchen</span></p>
             </div>
+
+            <!-- Reward Vault Button -->
+            <button id="reward-vault-btn" class="reward-vault-btn">💎 Reward Vault</button>
 
             <!-- Parent Mode Button -->
             <button id="parent-mode-btn" class="parent-mode-btn">🔒 Parent Mode</button>
@@ -92,10 +96,18 @@
                 <div id="quest-info" class="quest-info hidden">
                     <h3 id="quest-title"></h3>
                     <p id="quest-description"></p>
+                    <div class="quest-difficulty">
+                        <span class="difficulty-label">Difficulty:</span>
+                        <span id="quest-difficulty" class="difficulty-badge"></span>
+                    </div>
                     <div class="quest-rewards">
                         <div class="reward-item">
                             <span class="reward-label">XP Reward:</span>
                             <span id="quest-xp" class="reward-value"></span>
+                        </div>
+                        <div class="reward-item">
+                            <span class="reward-label">💎 Gems:</span>
+                            <span id="quest-gems" class="reward-value" style="color: #ffd700;"></span>
                         </div>
                         <div class="reward-item" id="quest-irl-reward-container">
                             <span class="reward-label">IRL Reward:</span>
@@ -148,10 +160,91 @@
 
                     <h3>Active Quests</h3>
                     <div id="active-quests-list" class="quests-list"></div>
+
+                    <h3 style="margin-top: 30px;">💎 Reward Vault Management</h3>
+                    <p style="color: #666; font-size: 14px; margin-top: -10px;">Set rewards that unlock when your child collects enough gems!</p>
+
+                    <div class="form-group">
+                        <label>Reward Name:</label>
+                        <input type="text" id="new-reward-name" placeholder="e.g., Ice Cream Trip">
+                    </div>
+                    <div class="form-group">
+                        <label>Gems Required:</label>
+                        <input type="number" id="new-reward-gems" value="10" min="1" max="1000">
+                    </div>
+                    <button id="create-reward-btn" class="btn btn-primary" style="width: 100%; margin-bottom: 20px;">Create Reward</button>
+
+                    <h4>All Rewards</h4>
+                    <div id="parent-rewards-list" class="quests-list">
+                        <p style="color: #999;">No rewards yet. Create one above!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reward Vault Panel -->
+        <div id="reward-vault-panel" class="reward-vault-panel hidden">
+            <div class="reward-vault-content">
+                <h2>💎 Reward Vault</h2>
+                <p class="vault-description">Complete quests to earn gems and unlock amazing rewards!</p>
+
+                <div class="gem-display">
+                    <div class="gem-count">
+                        <span class="gem-icon">💎</span>
+                        <span id="vault-gem-count" class="gem-number">0</span>
+                        <span class="gem-label">Total Gems</span>
+                    </div>
+                </div>
+
+                <h3>Available Rewards</h3>
+                <div id="vault-rewards-list" class="vault-rewards-list">
+                    <p style="color: #999;">No rewards available yet. Ask your parents to add some!</p>
+                </div>
+
+                <div class="panel-buttons">
+                    <button id="close-vault-btn" class="btn btn-secondary">Close</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- In-App Notification System -->
+    <div id="notification-container" class="notification-container"></div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="help-modal hidden">
+        <div class="help-modal-content">
+            <div class="help-modal-header">
+                <h2>🎮 How to Play</h2>
+                <button id="close-help-btn" class="close-help-btn">✕</button>
+            </div>
+            <div class="help-sections">
+                <div class="help-section">
+                    <h3>🚶 Movement</h3>
+                    <p>⌨️ Use arrow keys to move around</p>
+                    <p>🖱️ Click anywhere to teleport there</p>
+                </div>
+                <div class="help-section">
+                    <h3>🚪 Exploring</h3>
+                    <p>Walk through doors to visit different rooms</p>
+                    <p>Each room has NPCs with quests!</p>
+                </div>
+                <div class="help-section">
+                    <h3>📜 Quests</h3>
+                    <p>💬 Click or walk up to NPCs to get quests</p>
+                    <p>✅ Accept quests and complete them for XP & gems</p>
+                    <p>📊 Complete 5 tasks per level to level up</p>
+                </div>
+                <div class="help-section">
+                    <h3>💎 Reward Vault</h3>
+                    <p>Earn gems from quests based on difficulty</p>
+                    <p>Unlock rewards when you reach gem goals</p>
+                    <p>Claim rewards and show your parents!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="src/game.js"></script>
 </body>
 </html>
