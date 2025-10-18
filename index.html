@@ -231,6 +231,88 @@
     <!-- In-App Notification System -->
     <div id="notification-container" class="notification-container"></div>
 
+    <!-- Welcome Modal -->
+    <div id="welcome-modal" class="welcome-modal hidden">
+        <div class="welcome-modal-content">
+            <div class="welcome-header">
+                <div class="welcome-greeting">
+                    <h1 id="welcome-greeting-text">Good Morning, Hero!</h1>
+                    <p id="welcome-date" class="welcome-date"></p>
+                </div>
+            </div>
+            
+            <div class="welcome-body">
+                <div class="welcome-section stats-section">
+                    <div class="stat-card level-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Level</div>
+                            <div class="stat-value" id="welcome-level">1</div>
+                        </div>
+                    </div>
+                    <div class="stat-card gems-card">
+                        <div class="stat-icon">💎</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Gems</div>
+                            <div class="stat-value" id="welcome-gems">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card xp-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-content">
+                            <div class="stat-label">XP</div>
+                            <div class="stat-value" id="welcome-xp">0 / 100</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="welcome-section quest-section">
+                    <h3>🎯 Current Quest</h3>
+                    <div id="welcome-current-quest" class="welcome-quest-info">
+                        <p class="no-quest-msg">No active quests - Talk to NPCs to get started!</p>
+                    </div>
+                </div>
+
+                <div class="welcome-section pressing-quest-section">
+                    <h3>⚠️ Most Pressing Quest</h3>
+                    <div id="welcome-pressing-quest" class="welcome-quest-info">
+                        <p class="no-quest-msg">All caught up!</p>
+                    </div>
+                </div>
+
+                <div class="welcome-section rewards-section">
+                    <h3>🎁 Next Reward</h3>
+                    <div id="welcome-next-reward" class="welcome-reward-info">
+                        <p class="no-reward-msg">No rewards available yet!</p>
+                    </div>
+                </div>
+
+                <div class="welcome-section progress-section">
+                    <h3>📊 Today's Progress</h3>
+                    <div id="welcome-progress" class="welcome-progress-info">
+                        <div class="progress-item">
+                            <span class="progress-label">Active Quests:</span>
+                            <span class="progress-value" id="welcome-active-count">0</span>
+                        </div>
+                        <div class="progress-item">
+                            <span class="progress-label">Completed Today:</span>
+                            <span class="progress-value" id="welcome-completed-count">0</span>
+                        </div>
+                        <div class="progress-item">
+                            <span class="progress-label">Tasks This Level:</span>
+                            <span class="progress-value" id="welcome-level-tasks">0 / 5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="welcome-footer">
+                <p class="motivational-quote" id="welcome-quote">You've got this! Let's make today amazing! 🌟</p>
+                <button id="welcome-start-btn" class="btn btn-primary welcome-start-btn">Start Your Adventure!</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Help Modal -->
     <div id="help-modal" class="help-modal hidden">
         <div class="help-modal-content">

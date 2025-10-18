@@ -163,10 +163,82 @@ const xpBar = document.getElementById('xp-bar');
 const gameWorld = document.getElementById('game-world');
 
 // Quest system - enhanced with room, level, difficulty, and completion tracking
-let quests = []; // Each quest will have { id, npcId, name, description, room, level, difficulty, xpReward, gemReward, irlReward, acceptedByPlayer, completed }
+let quests = []; // Each quest will have { id, npcId, name, description, room, level, difficulty, xpReward, gemReward, irlReward, acceptedByPlayer, completed, isDaily }
 let currentNPC = null;
 let currentQuestInPanel = null; // Track which quest is being viewed in the panel
 let tasksCompletedAtLevel = {}; // Track completed tasks per level { level: count }
+
+// Default daily quests that reset every day
+const DEFAULT_DAILY_QUESTS = [
+    // Kitchen quests - Chef Wizard
+    {
+        npcId: 'wizard',
+        name: 'Wash the Dishes',
+        description: 'Help the Chef Wizard by washing all the dishes after meals.',
+        difficulty: 'easy',
+        xpReward: 25,
+        gemReward: 1
+    },
+    {
+        npcId: 'wizard',
+        name: 'Clean Kitchen Counter',
+        description: 'Wipe down the kitchen counter and keep it sparkling clean.',
+        difficulty: 'easy',
+        xpReward: 20,
+        gemReward: 1
+    },
+    // Basement quests - Laundry Goblin
+    {
+        npcId: 'goblin',
+        name: 'Sort the Laundry',
+        description: 'Help the goblin sort clothes into lights and darks.',
+        difficulty: 'easy',
+        xpReward: 25,
+        gemReward: 1
+    },
+    {
+        npcId: 'goblin',
+        name: 'Fold Clean Clothes',
+        description: 'Fold the clean laundry and put it away neatly.',
+        difficulty: 'medium',
+        xpReward: 35,
+        gemReward: 2
+    },
+    // Pet Room quests - Fluffy
+    {
+        npcId: 'pet',
+        name: 'Feed the Pet',
+        description: 'Make sure your pet has fresh food and water.',
+        difficulty: 'easy',
+        xpReward: 20,
+        gemReward: 1
+    },
+    {
+        npcId: 'pet',
+        name: 'Clean Pet Area',
+        description: 'Clean up the pet area and make it comfortable.',
+        difficulty: 'easy',
+        xpReward: 25,
+        gemReward: 1
+    },
+    // Study quests - Scholar Owl
+    {
+        npcId: 'owl',
+        name: 'Complete Homework',
+        description: 'Finish all your homework assignments for today.',
+        difficulty: 'medium',
+        xpReward: 40,
+        gemReward: 2
+    },
+    {
+        npcId: 'owl',
+        name: 'Read for 20 Minutes',
+        description: 'Spend 20 minutes reading a book of your choice.',
+        difficulty: 'easy',
+        xpReward: 30,
+        gemReward: 1
+    }
+];
 
 // Reward Vault system
 let vaultRewards = []; // Parent-defined rewards { id, name, gemCost, unlocked, claimed }
@@ -213,12 +285,71 @@ function showNotification(title, message, type = 'info', duration = 3000) {
     }, duration);
 }
 
+// Daily quest management
+function createDailyQuest(template) {
+    const npc = NPCS[template.npcId];
+    return {
+        id: Date.now() + Math.random(),
+        npcId: template.npcId,
+        name: template.name,
+        description: template.description,
+        room: npc.room,
+        level: 1, // All daily quests are level 1
+        difficulty: template.difficulty,
+        xpReward: template.xpReward,
+        gemReward: template.gemReward,
+        irlReward: '',
+        acceptedByPlayer: false,
+        completed: false,
+        isDaily: true // Mark as daily quest
+    };
+}
+
+function initializeDailyQuests() {
+    // Check if we need to reset daily quests
+    const lastResetDate = localStorage.getItem('habitHeroLastDailyReset');
+    const today = new Date().toDateString();
+    
+    if (lastResetDate !== today) {
+        // It's a new day! Reset daily quests
+        console.log('🌅 New day detected! Resetting daily quests...');
+        
+        // Remove old daily quests
+        quests = quests.filter(q => !q.isDaily);
+        
+        // Add fresh daily quests
+        DEFAULT_DAILY_QUESTS.forEach(template => {
+            const dailyQuest = createDailyQuest(template);
+            quests.push(dailyQuest);
+        });
+        
+        // Save the reset date
+        localStorage.setItem('habitHeroLastDailyReset', today);
+        saveQuests();
+        
+        console.log(`✅ Added ${DEFAULT_DAILY_QUESTS.length} daily quests!`);
+    } else {
+        // Check if daily quests exist, if not add them
+        const dailyQuestsExist = quests.some(q => q.isDaily);
+        if (!dailyQuestsExist) {
+            console.log('📜 Adding daily quests for the first time...');
+            DEFAULT_DAILY_QUESTS.forEach(template => {
+                const dailyQuest = createDailyQuest(template);
+                quests.push(dailyQuest);
+            });
+            localStorage.setItem('habitHeroLastDailyReset', today);
+            saveQuests();
+        }
+    }
+}
+
 // Initialize game
 function init() {
     loadGameState();
     loadPetName();
     loadTasksCompleted();
     loadRewardVault();
+    initializeDailyQuests(); // Initialize or reset daily quests
     updatePlayerStats();
     updatePlayerQuestList();
     switchRoom(player.currentRoom);
@@ -229,6 +360,158 @@ function init() {
     console.log('👨‍👩‍👧 Parents: Click "Parent Mode" to create quests');
     console.log('🧒 Kids: Talk to NPCs to get quests!');
     console.log('💎 Collect gems from quests to unlock rewards!');
+
+    // Show welcome modal
+    showWelcomeModal();
+}
+
+// Show Welcome Modal with motivational stats
+function showWelcomeModal() {
+    const modal = document.getElementById('welcome-modal');
+    
+    // Get time of day for greeting
+    const hour = new Date().getHours();
+    let greeting = 'Good Morning';
+    if (hour >= 12 && hour < 17) {
+        greeting = 'Good Afternoon';
+    } else if (hour >= 17) {
+        greeting = 'Good Evening';
+    }
+    
+    // Set greeting
+    document.getElementById('welcome-greeting-text').textContent = `${greeting}, Hero!`;
+    
+    // Set date
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const dateStr = new Date().toLocaleDateString('en-US', dateOptions);
+    document.getElementById('welcome-date').textContent = dateStr;
+    
+    // Set stats
+    document.getElementById('welcome-level').textContent = player.level;
+    document.getElementById('welcome-gems').textContent = player.gems;
+    document.getElementById('welcome-xp').textContent = `${player.xp} / ${getXpNeeded(player.level)}`;
+    
+    // Get active quests
+    const activeQuests = quests.filter(q => q.acceptedByPlayer && !q.completed);
+    const completedToday = getCompletedTodayCount();
+    
+    // Current quest (first active quest)
+    const currentQuestDiv = document.getElementById('welcome-current-quest');
+    if (activeQuests.length > 0) {
+        const quest = activeQuests[0];
+        currentQuestDiv.innerHTML = `
+            <div class="quest-item">
+                <span class="quest-name">${quest.name}</span>
+                <span class="quest-npc">from ${getNPCName(quest.npcId)}</span>
+                <span class="quest-difficulty ${quest.difficulty}">${quest.difficulty.toUpperCase()}</span>
+                <div style="margin-top: 8px; color: #666;">
+                    Rewards: ${quest.xpReward} XP, ${quest.gemReward} 💎
+                </div>
+            </div>
+        `;
+    } else {
+        currentQuestDiv.innerHTML = '<p class="no-quest-msg">No active quests - Talk to NPCs to get started!</p>';
+    }
+    
+    // Most pressing quest (hard difficulty or oldest)
+    const pressingQuestDiv = document.getElementById('welcome-pressing-quest');
+    const hardQuests = activeQuests.filter(q => q.difficulty === 'hard');
+    const pressingQuest = hardQuests.length > 0 ? hardQuests[0] : activeQuests[0];
+    
+    if (pressingQuest && pressingQuest !== activeQuests[0]) {
+        pressingQuestDiv.innerHTML = `
+            <div class="quest-item">
+                <span class="quest-name">${pressingQuest.name}</span>
+                <span class="quest-npc">from ${getNPCName(pressingQuest.npcId)}</span>
+                <span class="quest-difficulty ${pressingQuest.difficulty}">${pressingQuest.difficulty.toUpperCase()}</span>
+            </div>
+        `;
+    } else if (activeQuests.length > 1) {
+        const secondQuest = activeQuests[1];
+        pressingQuestDiv.innerHTML = `
+            <div class="quest-item">
+                <span class="quest-name">${secondQuest.name}</span>
+                <span class="quest-npc">from ${getNPCName(secondQuest.npcId)}</span>
+                <span class="quest-difficulty ${secondQuest.difficulty}">${secondQuest.difficulty.toUpperCase()}</span>
+            </div>
+        `;
+    } else {
+        pressingQuestDiv.innerHTML = '<p class="no-quest-msg">All caught up! Great job! 🎉</p>';
+    }
+    
+    // Next reward
+    const nextRewardDiv = document.getElementById('welcome-next-reward');
+    const unlockedRewards = vaultRewards.filter(r => !r.unlocked).sort((a, b) => a.gemCost - b.gemCost);
+    
+    if (unlockedRewards.length > 0) {
+        const nextReward = unlockedRewards[0];
+        const gemsNeeded = nextReward.gemCost - player.gems;
+        const progress = Math.min(100, (player.gems / nextReward.gemCost) * 100).toFixed(0);
+        
+        nextRewardDiv.innerHTML = `
+            <div class="reward-item">
+                <div>
+                    <span class="reward-name">${nextReward.name}</span>
+                    <div class="reward-progress">${gemsNeeded > 0 ? `${gemsNeeded} more gems needed` : 'Ready to unlock!'}</div>
+                </div>
+                <span class="reward-cost">💎 ${nextReward.gemCost}</span>
+            </div>
+            <div style="margin-top: 10px;">
+                <div style="background: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">
+                    <div style="background: linear-gradient(90deg, #ffd700, #ffed4e); height: 100%; width: ${progress}%; transition: width 0.3s;"></div>
+                </div>
+            </div>
+        `;
+    } else if (vaultRewards.filter(r => r.unlocked && !r.claimed).length > 0) {
+        nextRewardDiv.innerHTML = `
+            <p style="color: #4caf50; font-weight: bold; margin: 0;">
+                🎉 You have unlocked rewards waiting in your vault!
+            </p>
+        `;
+    } else {
+        nextRewardDiv.innerHTML = '<p class="no-reward-msg">No rewards available yet - Ask your parents to add some!</p>';
+    }
+    
+    // Progress stats
+    document.getElementById('welcome-active-count').textContent = activeQuests.length;
+    document.getElementById('welcome-completed-count').textContent = completedToday;
+    
+    const tasksAtCurrentLevel = tasksCompletedAtLevel[player.level] || 0;
+    document.getElementById('welcome-level-tasks').textContent = `${tasksAtCurrentLevel} / 5`;
+    
+    // Motivational quotes
+    const quotes = [
+        "You've got this! Let's make today amazing! 🌟",
+        "Every quest completed brings you closer to greatness! 💪",
+        "Today is a new day to be a hero! 🦸",
+        "Small steps lead to big victories! 🚀",
+        "Your adventure awaits - let's go! ⚔️",
+        "Believe in yourself and watch magic happen! ✨",
+        "You're doing great - keep up the momentum! 🎯",
+        "One quest at a time, one day at a time! 🌈"
+    ];
+    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+    document.getElementById('welcome-quote').textContent = randomQuote;
+    
+    // Show modal
+    modal.classList.remove('hidden');
+}
+
+// Get count of quests completed today
+function getCompletedTodayCount() {
+    const today = new Date().toDateString();
+    const completedToday = quests.filter(q => {
+        if (!q.completed || !q.completedAt) return false;
+        const completedDate = new Date(q.completedAt).toDateString();
+        return completedDate === today;
+    });
+    return completedToday.length;
+}
+
+// Close welcome modal
+function closeWelcomeModal() {
+    const modal = document.getElementById('welcome-modal');
+    modal.classList.add('hidden');
 }
 
 // Get the current pet name
@@ -589,6 +872,7 @@ function completeQuest(quest) {
 
     // Mark quest as completed
     quest.completed = true;
+    quest.completedAt = new Date().toISOString(); // Track when it was completed
 
     // Track completed tasks for this level
     if (!tasksCompletedAtLevel[quest.level]) {
@@ -1544,10 +1828,15 @@ function updateActiveQuestsList() {
             const npcName = getNPCName(quest.npcId);
             const room = ROOMS[quest.room];
             const incompleteAtLevel = getIncompleteTasksForLevel(quest.level);
+            const isDailyBadge = quest.isDaily ? '<span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px;">📅 Daily</span>' : '';
+            const deleteButton = quest.isDaily 
+                ? '<span style="color: #999; font-size: 0.85em;">Resets daily</span>'
+                : `<button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>`;
+            
             return `
                 <div class="quest-item">
                     <div class="quest-item-header">
-                        <span class="quest-item-title">${quest.name}</span>
+                        <span class="quest-item-title">${quest.name}${isDailyBadge}</span>
                         <span class="quest-item-npc" style="background: ${npc.color};">
                             ${npc.emoji} ${npcName}
                         </span>
@@ -1557,8 +1846,8 @@ function updateActiveQuestsList() {
                         <span>📍 ${room.emoji} ${room.name}</span>
                         <span>⭐ Level ${quest.level} (${incompleteAtLevel}/5 tasks)</span>
                     </div>
-                    <div class="quest-item-xp">Reward: ${quest.xpReward} XP${quest.irlReward ? ' + ' + quest.irlReward : ''}</div>
-                    <button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>
+                    <div class="quest-item-xp">Reward: ${quest.xpReward} XP, ${quest.gemReward} 💎${quest.irlReward ? ' + ' + quest.irlReward : ''}</div>
+                    ${deleteButton}
                 </div>
             `;
         }).join('');
@@ -1571,10 +1860,15 @@ function updateActiveQuestsList() {
             const npc = NPCS[quest.npcId];
             const npcName = getNPCName(quest.npcId);
             const room = ROOMS[quest.room];
+            const isDailyBadge = quest.isDaily ? '<span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px;">📅 Daily</span>' : '';
+            const deleteButton = quest.isDaily 
+                ? '<span style="color: #999; font-size: 0.85em;">Resets daily</span>'
+                : `<button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>`;
+            
             return `
                 <div class="quest-item" style="opacity: 0.6; background: #e8f5e9;">
                     <div class="quest-item-header">
-                        <span class="quest-item-title">${quest.name}</span>
+                        <span class="quest-item-title">${quest.name}${isDailyBadge}</span>
                         <span class="quest-item-npc" style="background: ${npc.color};">
                             ${npc.emoji} ${npcName}
                         </span>
@@ -1584,7 +1878,7 @@ function updateActiveQuestsList() {
                         <span>⭐ Level ${quest.level}</span>
                         <span style="color: #4caf50;">✅ Completed</span>
                     </div>
-                    <button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>
+                    ${deleteButton}
                 </div>
             `;
         }).join('');
@@ -1658,6 +1952,9 @@ gameWorld.addEventListener('click', (e) => {
 
 // Event Listeners
 function setupEventListeners() {
+    // Welcome modal
+    document.getElementById('welcome-start-btn').addEventListener('click', closeWelcomeModal);
+
     // Room navigation
     document.querySelectorAll('.room-btn').forEach(btn => {
         btn.addEventListener('click', () => {

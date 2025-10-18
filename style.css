@@ -1328,6 +1328,309 @@ body {
     background: #764ba2;
 }
 
+/* Welcome Modal */
+.welcome-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+.welcome-modal.hidden {
+    display: none;
+}
+
+.welcome-modal-content {
+    background: white;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 650px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.welcome-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 30px;
+    border-radius: 20px 20px 0 0;
+    text-align: center;
+    color: white;
+}
+
+.welcome-greeting h1 {
+    margin: 0 0 10px 0;
+    font-size: 2.2em;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.welcome-date {
+    margin: 0;
+    font-size: 1.1em;
+    opacity: 0.95;
+    font-weight: normal;
+}
+
+.welcome-body {
+    padding: 25px;
+}
+
+.welcome-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.welcome-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.welcome-section h3 {
+    color: #667eea;
+    margin: 0 0 15px 0;
+    font-size: 1.2em;
+}
+
+/* Stats Cards */
+.stats-section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    padding-bottom: 25px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-card.gems-card {
+    background: linear-gradient(135deg, #fff9e6 0%, #ffe9a8 100%);
+}
+
+.stat-card.level-card {
+    background: linear-gradient(135deg, #e8f5e9 0%, #a5d6a7 100%);
+}
+
+.stat-card.xp-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%);
+}
+
+.stat-icon {
+    font-size: 2em;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-card .stat-label {
+    font-size: 0.85em;
+    color: #666;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.stat-card .stat-value {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333;
+    margin-top: 2px;
+}
+
+/* Quest Info */
+.welcome-quest-info,
+.welcome-reward-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.welcome-quest-info .quest-item,
+.welcome-reward-info .reward-item {
+    margin-bottom: 8px;
+}
+
+.welcome-quest-info .quest-name {
+    font-weight: bold;
+    color: #333;
+    font-size: 1.1em;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.welcome-quest-info .quest-npc {
+    color: #667eea;
+    font-size: 0.95em;
+}
+
+.welcome-quest-info .quest-difficulty {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.quest-difficulty.easy {
+    background: #c8e6c9;
+    color: #2e7d32;
+}
+
+.quest-difficulty.medium {
+    background: #fff9c4;
+    color: #f57f17;
+}
+
+.quest-difficulty.hard {
+    background: #ffcdd2;
+    color: #c62828;
+}
+
+.no-quest-msg,
+.no-reward-msg {
+    color: #999;
+    font-style: italic;
+    margin: 0;
+}
+
+/* Reward Info */
+.welcome-reward-info .reward-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.welcome-reward-info .reward-name {
+    font-weight: bold;
+    color: #333;
+    font-size: 1.05em;
+}
+
+.welcome-reward-info .reward-cost {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.welcome-reward-info .reward-progress {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Progress Info */
+.welcome-progress-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.progress-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 8px 0;
+}
+
+.progress-item:last-child {
+    margin-bottom: 0;
+}
+
+.progress-label {
+    color: #666;
+    font-weight: 500;
+}
+
+.progress-value {
+    color: #667eea;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Welcome Footer */
+.welcome-footer {
+    padding: 25px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 0 0 20px 20px;
+    text-align: center;
+}
+
+.motivational-quote {
+    color: #667eea;
+    font-size: 1.1em;
+    font-weight: bold;
+    margin: 0 0 20px 0;
+    font-style: italic;
+}
+
+.welcome-start-btn {
+    width: 100%;
+    padding: 15px 30px;
+    font-size: 1.2em;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.welcome-start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+/* Responsive Design for Welcome Modal */
+@media (max-width: 768px) {
+    .welcome-greeting h1 {
+        font-size: 1.7em;
+    }
+    
+    .stats-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .welcome-modal-content {
+        max-height: 95vh;
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
     .game-container {
