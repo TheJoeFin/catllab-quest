@@ -1154,6 +1154,180 @@ body {
     display: none !important;
 }
 
+/* Quest Template Modal */
+.template-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+    padding: 20px;
+}
+
+.template-modal-content {
+    background: white;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.template-modal-header {
+    padding: 20px 25px;
+    border-bottom: 2px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px 15px 0 0;
+}
+
+.template-modal-header h2 {
+    margin: 0;
+    color: white;
+    font-size: 1.5em;
+}
+
+.close-template-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.close-template-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.template-quests-container {
+    padding: 25px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.template-category {
+    margin-bottom: 30px;
+}
+
+.template-category h4 {
+    color: #667eea;
+    font-size: 1.2em;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.template-item {
+    display: flex;
+    align-items: start;
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    transition: all 0.2s;
+}
+
+.template-item:hover {
+    background: #f9f9f9;
+    border-color: #667eea;
+}
+
+.template-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 2px 12px 0 0;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.template-item label {
+    flex: 1;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.template-item label strong {
+    display: block;
+    color: #333;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.template-meta {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #e0e0e0;
+    margin-right: 6px;
+    text-transform: uppercase;
+}
+
+.template-desc {
+    color: #666;
+    font-size: 13px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.custom-quest-input {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    background: #fafafa;
+}
+
+.custom-quest-input input,
+.custom-quest-input textarea,
+.custom-quest-input select {
+    font-family: 'Courier New', monospace;
+}
+
+.template-modal-footer {
+    padding: 20px 25px;
+    border-top: 2px solid #e0e0e0;
+    background: #f9f9f9;
+    border-radius: 0 0 15px 15px;
+}
+
+/* Scrollbar styling for template modal */
+.template-quests-container::-webkit-scrollbar {
+    width: 10px;
+}
+
+.template-quests-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 5px;
+}
+
+.template-quests-container::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 5px;
+}
+
+.template-quests-container::-webkit-scrollbar-thumb:hover {
+    background: #764ba2;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
     .game-container {

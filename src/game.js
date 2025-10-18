@@ -1012,6 +1012,71 @@ function hideParentMode() {
     document.getElementById('parent-panel').classList.add('hidden');
 }
 
+// Quest Templates for kids ages 8-10
+const QUEST_TEMPLATES = {
+    kitchen: [
+        { name: "Set the Table", description: "Set the table for dinner with plates, utensils, and cups", difficulty: "easy", xp: 30 },
+        { name: "Clear the Table", description: "Clear dishes and wipe down the table after meals", difficulty: "easy", xp: 30 },
+        { name: "Wash the Dishes", description: "Wash and dry all the dishes in the sink", difficulty: "medium", xp: 50 },
+        { name: "Load the Dishwasher", description: "Load dirty dishes into the dishwasher properly", difficulty: "easy", xp: 30 },
+        { name: "Unload the Dishwasher", description: "Put away all clean dishes from the dishwasher", difficulty: "easy", xp: 30 },
+        { name: "Wipe Down Counters", description: "Clean and wipe down all kitchen counters", difficulty: "easy", xp: 30 },
+        { name: "Sweep the Kitchen Floor", description: "Sweep the kitchen floor to remove crumbs and dirt", difficulty: "easy", xp: 30 },
+        { name: "Take Out Kitchen Trash", description: "Take out the kitchen trash and replace the bag", difficulty: "easy", xp: 30 },
+        { name: "Help Pack Lunch", description: "Help prepare and pack lunch for school", difficulty: "medium", xp: 40 },
+        { name: "Put Away Groceries", description: "Help put away groceries in the pantry and fridge", difficulty: "easy", xp: 30 }
+    ],
+    basement: [
+        { name: "Sort Laundry", description: "Sort dirty clothes into whites, colors, and darks", difficulty: "easy", xp: 30 },
+        { name: "Put Clothes in Washer", description: "Load sorted clothes into the washing machine", difficulty: "easy", xp: 30 },
+        { name: "Move Clothes to Dryer", description: "Transfer wet clothes from washer to dryer", difficulty: "easy", xp: 30 },
+        { name: "Fold Clean Laundry", description: "Fold your own clean clothes neatly", difficulty: "medium", xp: 50 },
+        { name: "Put Away Clothes", description: "Put your folded clothes away in drawers", difficulty: "easy", xp: 30 },
+        { name: "Match Socks", description: "Match all the clean socks into pairs", difficulty: "easy", xp: 30 },
+        { name: "Hang Up Clothes", description: "Hang up shirts and pants on hangers", difficulty: "easy", xp: 30 },
+        { name: "Organize Basement", description: "Help organize and tidy up the basement area", difficulty: "hard", xp: 70 }
+    ],
+    petroom: [
+        { name: "Feed the Pet", description: "Give your pet their food and fresh water", difficulty: "easy", xp: 30 },
+        { name: "Clean Pet Bowl", description: "Wash and clean your pet's food and water bowls", difficulty: "easy", xp: 30 },
+        { name: "Play with Pet", description: "Spend 15 minutes playing with your pet", difficulty: "easy", xp: 30 },
+        { name: "Brush the Pet", description: "Brush your pet's fur gently", difficulty: "easy", xp: 30 },
+        { name: "Clean Litter Box", description: "Scoop and clean the cat's litter box", difficulty: "medium", xp: 50 },
+        { name: "Walk the Dog", description: "Take the dog for a 15-minute walk", difficulty: "medium", xp: 50 },
+        { name: "Refill Pet Supplies", description: "Check and refill pet food, water, and treats", difficulty: "easy", xp: 30 },
+        { name: "Clean Pet Toys", description: "Wash and organize pet toys", difficulty: "easy", xp: 30 }
+    ],
+    study: [
+        { name: "Complete Homework", description: "Finish all homework assignments for today", difficulty: "medium", xp: 50 },
+        { name: "Read for 20 Minutes", description: "Read a book for at least 20 minutes", difficulty: "easy", xp: 30 },
+        { name: "Practice Math Facts", description: "Practice multiplication or addition facts for 10 minutes", difficulty: "medium", xp: 40 },
+        { name: "Write in Journal", description: "Write a journal entry about your day", difficulty: "easy", xp: 30 },
+        { name: "Organize School Bag", description: "Clean out and organize your school backpack", difficulty: "easy", xp: 30 },
+        { name: "Practice Spelling Words", description: "Study and practice your spelling words", difficulty: "easy", xp: 30 },
+        { name: "Tidy Study Desk", description: "Clean and organize your study desk", difficulty: "easy", xp: 30 },
+        { name: "Complete Art Project", description: "Work on your art or craft project", difficulty: "medium", xp: 50 },
+        { name: "Practice Musical Instrument", description: "Practice your instrument for 15 minutes", difficulty: "medium", xp: 50 },
+        { name: "Study for Test", description: "Study and review for upcoming test", difficulty: "medium", xp: 50 }
+    ],
+    personal: [
+        { name: "Make Your Bed", description: "Make your bed neatly every morning", difficulty: "easy", xp: 30 },
+        { name: "Clean Your Room", description: "Pick up and organize your bedroom", difficulty: "medium", xp: 50 },
+        { name: "Put Toys Away", description: "Put all toys back in their proper places", difficulty: "easy", xp: 30 },
+        { name: "Brush Teeth Twice", description: "Brush your teeth morning and night", difficulty: "easy", xp: 30 },
+        { name: "Take a Shower", description: "Take a shower and wash your hair", difficulty: "easy", xp: 30 },
+        { name: "Lay Out Tomorrow's Clothes", description: "Choose and lay out clothes for tomorrow", difficulty: "easy", xp: 30 },
+        { name: "Empty Bedroom Trash", description: "Empty the trash can in your room", difficulty: "easy", xp: 30 },
+        { name: "Water Plants", description: "Water the houseplants or garden", difficulty: "easy", xp: 30 },
+        { name: "Help Sibling", description: "Help your brother or sister with a task", difficulty: "medium", xp: 40 },
+        { name: "Be Kind", description: "Do something kind for a family member", difficulty: "easy", xp: 30 }
+    ],
+    custom: [
+        { name: "Custom Quest 1", description: "Create your own quest here", difficulty: "easy", xp: 30 },
+        { name: "Custom Quest 2", description: "Create your own quest here", difficulty: "medium", xp: 50 },
+        { name: "Custom Quest 3", description: "Create your own quest here", difficulty: "hard", xp: 70 }
+    ]
+};
+
 // Multi-quest creation functions
 let questFormCounter = 0;
 
@@ -1074,6 +1139,227 @@ function createQuestFormHTML(formId) {
             </div>
         </div>
     `;
+}
+
+// Show quest template selector
+function showQuestTemplates() {
+    const modal = document.getElementById('template-modal');
+    if (!modal) return;
+    
+    modal.classList.remove('hidden');
+    renderQuestTemplates();
+}
+
+function hideQuestTemplates() {
+    const modal = document.getElementById('template-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// Render quest templates in the modal
+function renderQuestTemplates() {
+    const container = document.getElementById('template-quests-container');
+    if (!container) return;
+    
+    let html = '';
+    
+    // Kitchen quests
+    html += '<div class="template-category"><h4>🏠 Kitchen Chores</h4>';
+    QUEST_TEMPLATES.kitchen.forEach((template, idx) => {
+        html += createTemplateCheckbox('kitchen', idx, template);
+    });
+    html += '</div>';
+    
+    // Basement/Laundry quests
+    html += '<div class="template-category"><h4>🧺 Laundry & Basement</h4>';
+    QUEST_TEMPLATES.basement.forEach((template, idx) => {
+        html += createTemplateCheckbox('basement', idx, template);
+    });
+    html += '</div>';
+    
+    // Pet Room quests
+    html += '<div class="template-category"><h4>🐾 Pet Care</h4>';
+    QUEST_TEMPLATES.petroom.forEach((template, idx) => {
+        html += createTemplateCheckbox('petroom', idx, template);
+    });
+    html += '</div>';
+    
+    // Study quests
+    html += '<div class="template-category"><h4>📚 Homework & Study</h4>';
+    QUEST_TEMPLATES.study.forEach((template, idx) => {
+        html += createTemplateCheckbox('study', idx, template);
+    });
+    html += '</div>';
+    
+    // Personal quests
+    html += '<div class="template-category"><h4>🛏️ Personal Habits</h4>';
+    QUEST_TEMPLATES.personal.forEach((template, idx) => {
+        html += createTemplateCheckbox('personal', idx, template);
+    });
+    html += '</div>';
+    
+    // Custom quests
+    html += '<div class="template-category"><h4>✏️ Custom Quests</h4>';
+    html += '<p style="color: #666; font-size: 13px; margin-bottom: 10px;">Write in your own custom quests:</p>';
+    for (let i = 0; i < 5; i++) {
+        html += createCustomQuestInput(i);
+    }
+    html += '</div>';
+    
+    container.innerHTML = html;
+}
+
+function createTemplateCheckbox(category, idx, template) {
+    const difficultyColor = template.difficulty === 'easy' ? '#4caf50' : template.difficulty === 'medium' ? '#ff9800' : '#f44336';
+    return `
+        <div class="template-item">
+            <input type="checkbox" id="template-${category}-${idx}" data-category="${category}" data-idx="${idx}">
+            <label for="template-${category}-${idx}">
+                <strong>${template.name}</strong>
+                <span class="template-meta" style="color: ${difficultyColor};">${template.difficulty.toUpperCase()}</span>
+                <span class="template-meta">${template.xp} XP</span>
+                <div class="template-desc">${template.description}</div>
+            </label>
+        </div>
+    `;
+}
+
+function createCustomQuestInput(idx) {
+    return `
+        <div class="custom-quest-input" style="margin-bottom: 15px; padding: 10px; border: 1px dashed #ccc; border-radius: 5px;">
+            <input type="text" id="custom-name-${idx}" placeholder="Quest Name" style="width: 100%; margin-bottom: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <textarea id="custom-desc-${idx}" placeholder="Description" style="width: 100%; margin-bottom: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 50px;"></textarea>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                <select id="custom-difficulty-${idx}" style="padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+                <input type="number" id="custom-xp-${idx}" placeholder="XP" value="30" min="10" max="500" style="padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+        </div>
+    `;
+}
+
+// Create quests from selected templates
+function createQuestsFromTemplates() {
+    const selectedQuests = [];
+    
+    // Get all checked template checkboxes
+    document.querySelectorAll('#template-quests-container input[type="checkbox"]:checked').forEach(checkbox => {
+        const category = checkbox.dataset.category;
+        const idx = parseInt(checkbox.dataset.idx);
+        const template = QUEST_TEMPLATES[category][idx];
+        
+        if (template) {
+            // Map category to appropriate NPC and room
+            let npcId, room;
+            switch(category) {
+                case 'kitchen':
+                    npcId = 'wizard';
+                    room = 'kitchen';
+                    break;
+                case 'basement':
+                    npcId = 'goblin';
+                    room = 'basement';
+                    break;
+                case 'petroom':
+                    npcId = 'pet';
+                    room = 'petroom';
+                    break;
+                case 'study':
+                    npcId = 'owl';
+                    room = 'study';
+                    break;
+                case 'personal':
+                    // Personal tasks can go to any NPC - default to kitchen
+                    npcId = 'wizard';
+                    room = 'kitchen';
+                    break;
+            }
+            
+            selectedQuests.push({
+                name: template.name,
+                description: template.description,
+                npcId: npcId,
+                room: room,
+                level: 1,
+                difficulty: template.difficulty,
+                xpReward: template.xp,
+                irlReward: ''
+            });
+        }
+    });
+    
+    // Get custom quests
+    for (let i = 0; i < 5; i++) {
+        const name = document.getElementById(`custom-name-${i}`)?.value.trim();
+        const desc = document.getElementById(`custom-desc-${i}`)?.value.trim();
+        const difficulty = document.getElementById(`custom-difficulty-${i}`)?.value;
+        const xp = document.getElementById(`custom-xp-${i}`)?.value;
+        
+        if (name && desc) {
+            selectedQuests.push({
+                name: name,
+                description: desc,
+                npcId: 'wizard', // Default to wizard
+                room: 'kitchen', // Default to kitchen
+                level: 1,
+                difficulty: difficulty,
+                xpReward: parseInt(xp),
+                irlReward: ''
+            });
+        }
+    }
+    
+    if (selectedQuests.length === 0) {
+        showNotification('No Quests Selected', 'Please select at least one quest template or fill in a custom quest', 'warning', 3000);
+        return;
+    }
+    
+    // Validate level limits
+    const questsByLevel = {};
+    selectedQuests.forEach(quest => {
+        if (!questsByLevel[quest.level]) {
+            questsByLevel[quest.level] = [];
+        }
+        questsByLevel[quest.level].push(quest);
+    });
+    
+    for (const [level, quests] of Object.entries(questsByLevel)) {
+        const newQuestsCount = quests.length;
+        if (!canAddTasksToLevel(parseInt(level), newQuestsCount)) {
+            const currentCount = getIncompleteTasksForLevel(parseInt(level));
+            showNotification('Too Many Tasks', `Level ${level} would exceed 5 task limit. Current: ${currentCount}, trying to add: ${newQuestsCount}`, 'warning', 5000);
+            return;
+        }
+    }
+    
+    // Check total incomplete tasks warning
+    if (shouldWarnAboutTaskLimit(selectedQuests.length)) {
+        const totalIncomplete = getTotalIncompleteTasks();
+        const shouldContinue = confirm(`⚠️ Warning: High Task Load!\n\nYou currently have ${totalIncomplete} incomplete task${totalIncomplete !== 1 ? 's' : ''}.\nYou're about to add ${selectedQuests.length} more quest${selectedQuests.length !== 1 ? 's' : ''}, bringing the total to ${totalIncomplete + selectedQuests.length}.\n\nThis may overwhelm your child. Consider completing some existing tasks first.\n\nDo you want to add these quests anyway?`);
+        
+        if (!shouldContinue) {
+            return;
+        }
+    }
+    
+    // Create all quests
+    let createdCount = 0;
+    selectedQuests.forEach(quest => {
+        createQuest(quest.name, quest.description, quest.npcId, quest.room, quest.level, quest.difficulty, quest.xpReward, quest.irlReward);
+        createdCount++;
+    });
+    
+    // Update list
+    updateActiveQuestsList();
+    
+    // Close modal
+    hideQuestTemplates();
+    
+    showNotification('Quests Created', `${createdCount} quest${createdCount !== 1 ? 's' : ''} added successfully`, 'success', 3000);
 }
 
 function addQuestForm() {
@@ -1391,6 +1677,20 @@ function setupEventListeners() {
     document.getElementById('add-quest-form-btn').addEventListener('click', addQuestForm);
     document.getElementById('create-all-quests-btn').addEventListener('click', createAllQuestsFromForms);
     document.getElementById('close-parent-panel').addEventListener('click', hideParentMode);
+    
+    // Quest template buttons
+    const templateBtn = document.getElementById('use-templates-btn');
+    if (templateBtn) {
+        templateBtn.addEventListener('click', showQuestTemplates);
+    }
+    const closeTemplateBtn = document.getElementById('close-template-modal');
+    if (closeTemplateBtn) {
+        closeTemplateBtn.addEventListener('click', hideQuestTemplates);
+    }
+    const createFromTemplatesBtn = document.getElementById('create-from-templates-btn');
+    if (createFromTemplatesBtn) {
+        createFromTemplatesBtn.addEventListener('click', createQuestsFromTemplates);
+    }
 
     // Reward Vault buttons
     document.getElementById('reward-vault-btn').addEventListener('click', showRewardVault);

@@ -158,6 +158,16 @@
                     <h3>Create New Quests</h3>
                     <p style="color: #666; font-size: 14px; margin-top: -10px;">Add multiple quests at once! Each level allows 5 active tasks.</p>
 
+                    <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #4caf50;">
+                        <strong style="color: #2e7d32;">✨ NEW: Quest Templates!</strong>
+                        <p style="margin: 5px 0 10px 0; font-size: 13px; color: #1b5e20;">
+                            Use our pre-made quest templates for common chores and habits. Just check the boxes and go!
+                        </p>
+                        <button id="use-templates-btn" class="btn btn-primary" style="width: 100%;">
+                            📋 Use Quest Templates
+                        </button>
+                    </div>
+
                     <div id="quest-forms-container">
                         <!-- Quest forms will be added here dynamically -->
                     </div>
@@ -251,6 +261,27 @@
                     <p>Unlock rewards when you reach gem goals</p>
                     <p>Claim rewards and show your parents!</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quest Templates Modal -->
+    <div id="template-modal" class="template-modal hidden">
+        <div class="template-modal-content">
+            <div class="template-modal-header">
+                <h2>📋 Quest Templates</h2>
+                <button id="close-template-modal" class="close-template-btn">✕</button>
+            </div>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                Select quests from common chores and habits for kids ages 8-10. Check the ones that apply to your child, or write in custom quests at the bottom!
+            </p>
+            <div id="template-quests-container" class="template-quests-container">
+                <!-- Quest templates will be rendered here -->
+            </div>
+            <div class="template-modal-footer">
+                <button id="create-from-templates-btn" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 16px;">
+                    ✓ Create Selected Quests
+                </button>
             </div>
         </div>
     </div>
