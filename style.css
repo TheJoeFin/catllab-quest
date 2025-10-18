@@ -2049,6 +2049,7 @@ body {
     align-items: center;
     z-index: 10000;
     animation: fadeIn 0.3s ease;
+    padding: 20px 0; /* Add vertical padding for mobile */
 }
 
 .welcome-modal.hidden {
@@ -2065,6 +2066,7 @@ body {
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     animation: slideUp 0.4s ease;
+    margin: auto; /* Ensure centering with padding */
 }
 
 @keyframes slideUp {
@@ -2431,6 +2433,14 @@ body {
         max-height: 85vh;
         width: 95%;
     }
+    
+    .welcome-modal {
+        padding: 25px 10px; /* Add vertical padding */
+    }
+    
+    .welcome-modal-content {
+        max-height: 85vh; /* Reduced to ensure buttons aren't clipped */
+    }
 
     /* Button sizing */
     .btn {
@@ -2694,14 +2704,18 @@ body {
     }
 
     /* Welcome modal */
+    .welcome-modal {
+        padding: 30px 10px; /* Increased vertical padding for mobile */
+    }
+    
     .welcome-modal-content {
-        width: 98%;
-        max-height: 95vh;
+        width: 95%;
+        max-height: 85vh; /* Reduced max height to ensure room for padding */
         border-radius: 15px;
     }
 
     .welcome-header {
-        padding: 20px 15px;
+        padding: 25px 15px; /* Increased top padding */
     }
 
     .welcome-greeting h1 {
@@ -2736,7 +2750,7 @@ body {
     }
 
     .welcome-footer {
-        padding: 15px;
+        padding: 20px 15px; /* Increased bottom padding */
     }
 
     .motivational-quote {
@@ -2747,6 +2761,7 @@ body {
     .welcome-start-btn {
         padding: 12px 20px;
         font-size: 1em;
+        margin-bottom: 10px; /* Add margin below button */
     }
 
     /* Template modal */
