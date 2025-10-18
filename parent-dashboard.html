@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Dashboard - HabitHero</title>
+    <link rel="stylesheet" href="parent-dashboard.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1>🏆 Parent Dashboard</h1>
+                <div class="header-actions">
+                    <button id="refresh-btn" class="btn btn-secondary">↻ Refresh</button>
+                    <a href="index.html" class="btn btn-primary">← Back to Game</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Stats Overview -->
+            <section class="stats-overview">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Current Level</div>
+                        <div class="stat-value" id="current-level">1</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Total XP</div>
+                        <div class="stat-value" id="total-xp">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💎</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Gems Earned</div>
+                        <div class="stat-value" id="total-gems">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Quests Completed</div>
+                        <div class="stat-value" id="quests-completed">0</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Progress Hill Chart -->
+            <section class="progress-section">
+                <h2>Progress Overview</h2>
+                <div class="hill-chart-container">
+                    <div class="hill-chart">
+                        <svg id="hill-svg" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet">
+                            <!-- Hill path will be drawn here -->
+                            <defs>
+                                <linearGradient id="hillGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#4ade80;stop-opacity:0.3" />
+                                    <stop offset="100%" style="stop-color:#4ade80;stop-opacity:0.1" />
+                                </linearGradient>
+                            </defs>
+                            <!-- Hill background -->
+                            <path id="hill-path" d="M 0 250 Q 200 50, 400 250 T 800 250 L 800 300 L 0 300 Z"
+                                  fill="url(#hillGradient)" stroke="#4ade80" stroke-width="2"/>
+                            <!-- Midpoint line -->
+                            <line x1="400" y1="50" x2="400" y2="300" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5,5" opacity="0.5"/>
+                            <!-- Quest markers will be added here dynamically -->
+                        </svg>
+                        <div class="hill-labels">
+                            <div class="hill-label left">Figuring things out</div>
+                            <div class="hill-label center">|</div>
+                            <div class="hill-label right">Making it happen</div>
+                        </div>
+                    </div>
+                    <div class="hill-legend" id="hill-legend">
+                        <!-- Legend items will be added dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pending Rewards Section -->
+            <section class="rewards-section">
+                <h2>Rewards Ready to Grant</h2>
+                <div id="pending-rewards-container" class="pending-rewards">
+                    <!-- Pending rewards will be added here -->
+                </div>
+            </section>
+
+            <!-- Active Quests -->
+            <section class="quests-section">
+                <h2>Active Quests</h2>
+                <div id="active-quests-container" class="quests-grid">
+                    <!-- Active quests will be added here -->
+                </div>
+            </section>
+
+            <!-- Completed Quests -->
+            <section class="completed-section">
+                <h2>Recently Completed</h2>
+                <div id="completed-quests-container" class="completed-list">
+                    <!-- Completed quests will be added here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Reward Grant Modal -->
+    <div id="grant-reward-modal" class="modal">
+        <div class="modal-content">
+            <h3>Grant Reward</h3>
+            <p id="reward-grant-message"></p>
+            <div class="modal-actions">
+                <button id="confirm-grant-btn" class="btn btn-primary">✓ Grant Reward</button>
+                <button id="cancel-grant-btn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="parent-dashboard.js"></script>
+</body>
+</html>
