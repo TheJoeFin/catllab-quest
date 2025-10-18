@@ -8,47 +8,67 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>HabitHero</h1>
-        <p class="tagline">Stack Your Habits, Become a Hero!</p>
+        <!-- Left Sidebar -->
+        <div class="left-sidebar">
+            <h1>HabitHero</h1>
+            <p class="tagline">Stack Your Habits, Become a Hero!</p>
 
-        <!-- Player Stats -->
-        <div class="player-stats">
-            <div class="stat-item">
-                <span class="stat-label">Level:</span>
-                <span id="player-level" class="stat-value">1</span>
+            <!-- Player Stats -->
+            <div class="player-stats">
+                <h3>Your Progress</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Level:</span>
+                    <span id="player-level" class="stat-value">1</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">XP:</span>
+                    <span id="player-xp" class="stat-value">0</span>
+                    <span class="stat-separator">/</span>
+                    <span id="xp-needed" class="stat-value">100</span>
+                </div>
+                <div class="xp-bar-container">
+                    <div id="xp-bar" class="xp-bar"></div>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">XP:</span>
-                <span id="player-xp" class="stat-value">0</span>
-                <span class="stat-separator">/</span>
-                <span id="xp-needed" class="stat-value">100</span>
+
+            <!-- Controls Info -->
+            <div class="info">
+                <h3>Controls</h3>
+                <p>🚪 Walk through doors to explore!</p>
+                <p>💬 Talk to NPCs to get quests!</p>
+                <p>⌨️ Arrow keys or click to move</p>
             </div>
-            <div class="xp-bar-container">
-                <div id="xp-bar" class="xp-bar"></div>
+
+            <!-- Current Room -->
+            <div class="current-location">
+                <h3>Current Room</h3>
+                <p><span id="current-room">Kitchen</span></p>
+            </div>
+
+            <!-- Parent Mode Button -->
+            <button id="parent-mode-btn" class="parent-mode-btn">🔒 Parent Mode</button>
+
+            <!-- Room Navigation (Hidden) -->
+            <div id="room-nav" class="room-nav">
+                <button class="room-btn" data-room="kitchen">🏠 Kitchen</button>
+                <button class="room-btn" data-room="basement">🧺 Basement</button>
+                <button class="room-btn" data-room="petroom">🐾 Pet Room</button>
+                <button class="room-btn" data-room="study">📚 Study</button>
             </div>
         </div>
 
-        <!-- Controls Info -->
-        <div class="info">
-            <p>Walk through doors to explore! Talk to NPCs to get quests!</p>
-            <p>Room: <span id="current-room">Kitchen</span> | Position: <span id="position">X: 0, Y: 0</span></p>
-        </div>
+        <!-- Main Game Area -->
+        <div class="main-game-area">
+            <!-- Game World -->
+            <div id="game-world">
+                <div id="player"></div>
+                <div id="npcs-container"></div>
+            </div>
 
-        <!-- Parent Mode Button -->
-        <button id="parent-mode-btn" class="parent-mode-btn">Parent Mode</button>
-
-        <!-- Room Navigation -->
-        <div id="room-nav" class="room-nav">
-            <button class="room-btn" data-room="kitchen">🏠 Kitchen</button>
-            <button class="room-btn" data-room="basement">🧺 Basement</button>
-            <button class="room-btn" data-room="petroom">🐾 Pet Room</button>
-            <button class="room-btn" data-room="study">📚 Study</button>
-        </div>
-
-        <!-- Game World -->
-        <div id="game-world">
-            <div id="player"></div>
-            <div id="npcs-container"></div>
+            <!-- Position Display -->
+            <div class="position-display">
+                Position: <span id="position">X: 0, Y: 0</span>
+            </div>
         </div>
 
         <!-- NPC Interaction Panel -->
