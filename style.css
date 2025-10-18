@@ -20,16 +20,68 @@ body {
     padding: 30px;
     border-radius: 15px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 700px;
 }
 
 h1 {
     color: #333;
-    margin-bottom: 15px;
-    font-size: 2em;
+    margin-bottom: 5px;
+    font-size: 2.5em;
 }
 
+.tagline {
+    color: #667eea;
+    font-size: 1.1em;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+/* Player Stats */
+.player-stats {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    color: white;
+}
+
+.stat-item {
+    display: inline-block;
+    margin: 0 15px;
+    font-size: 1.2em;
+}
+
+.stat-label {
+    font-weight: bold;
+}
+
+.stat-value {
+    color: #ffeb3b;
+}
+
+.stat-separator {
+    margin: 0 3px;
+}
+
+.xp-bar-container {
+    background: rgba(255, 255, 255, 0.3);
+    height: 20px;
+    border-radius: 10px;
+    margin-top: 10px;
+    overflow: hidden;
+}
+
+.xp-bar {
+    background: linear-gradient(90deg, #ffeb3b 0%, #ffc107 100%);
+    height: 100%;
+    width: 0%;
+    transition: width 0.5s ease;
+    border-radius: 10px;
+}
+
+/* Info */
 .info {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     color: #666;
 }
 
@@ -42,6 +94,25 @@ h1 {
     font-weight: bold;
 }
 
+/* Parent Mode Button */
+.parent-mode-btn {
+    background: #ff9800;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    margin-bottom: 15px;
+    transition: background 0.3s;
+}
+
+.parent-mode-btn:hover {
+    background: #f57c00;
+}
+
+/* Game World */
 #game-world {
     position: relative;
     width: 600px;
@@ -67,7 +138,7 @@ h1 {
     margin: 0 auto;
 }
 
-/* Add some decorative trees/obstacles */
+/* Trees/obstacles */
 #game-world::before {
     content: '';
     position: absolute;
@@ -83,58 +154,116 @@ h1 {
         320px 240px 0 #2e7d32,
         120px 360px 0 #2e7d32,
         400px 120px 0 #2e7d32;
+    z-index: 5;
 }
 
-/* Add some flowers */
-#game-world::after {
-    content: '';
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background: #ff4081;
-    border-radius: 50%;
-    top: 160px;
-    left: 320px;
-    box-shadow:
-        -80px 160px 0 #ffeb3b,
-        200px 80px 0 #ff4081,
-        -160px 320px 0 #ffeb3b,
-        240px 280px 0 #ff4081;
-}
-
+/* Player - Human Character */
 #player {
     position: absolute;
     width: 40px;
     height: 40px;
-    background: #ff5722;
-    border: 3px solid #fff;
-    border-radius: 50%;
     transition: all 0.1s ease;
-    box-shadow:
-        0 0 0 3px #ff5722,
-        0 4px 8px rgba(0, 0, 0, 0.3);
     z-index: 10;
 }
 
-/* Add eyes to the player */
-#player::before,
+/* Head */
+#player::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #ffd1a3;
+    border-radius: 50%;
+    top: 0;
+    left: 10px;
+    border: 2px solid #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Body */
 #player::after {
     content: '';
     position: absolute;
-    width: 8px;
-    height: 8px;
-    background: #fff;
-    border-radius: 50%;
-    top: 12px;
-    border: 2px solid #333;
-}
-
-#player::before {
+    width: 24px;
+    height: 20px;
+    background: #2196f3;
+    border-radius: 8px 8px 4px 4px;
+    top: 18px;
     left: 8px;
+    border: 2px solid #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-#player::after {
-    right: 8px;
+/* Eyes - created with a pseudo-element wrapper */
+#player {
+    --eye-color: #333;
+}
+
+/* Arms and legs container */
+.player-limbs {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* Creating eyes with box-shadow on the head */
+#player::before {
+    box-shadow:
+        -4px 8px 0 -2px var(--eye-color),
+        4px 8px 0 -2px var(--eye-color),
+        0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Smile */
+.player-smile {
+    position: absolute;
+    width: 10px;
+    height: 6px;
+    border: 2px solid #333;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    top: 12px;
+    left: 15px;
+    z-index: 1;
+}
+
+/* Arms */
+.player-arm {
+    position: absolute;
+    width: 4px;
+    height: 14px;
+    background: #ffd1a3;
+    border: 1px solid #333;
+    border-radius: 2px;
+    top: 20px;
+}
+
+.left-arm {
+    left: 4px;
+}
+
+.right-arm {
+    right: 4px;
+}
+
+/* Legs */
+.player-leg {
+    position: absolute;
+    width: 6px;
+    height: 12px;
+    background: #1976d2;
+    border: 1px solid #333;
+    border-radius: 2px;
+    top: 36px;
+}
+
+.left-leg {
+    left: 12px;
+}
+
+.right-leg {
+    right: 12px;
 }
 
 /* Movement animation */
@@ -143,6 +272,302 @@ h1 {
     50% { transform: scale(1.05); }
 }
 
+@keyframes walk-left {
+    0%, 100% { transform: rotate(-10deg); }
+    50% { transform: rotate(10deg); }
+}
+
+@keyframes walk-right {
+    0%, 100% { transform: rotate(10deg); }
+    50% { transform: rotate(-10deg); }
+}
+
 #player.moving {
     animation: move 0.2s ease;
+}
+
+#player.moving .left-leg {
+    animation: walk-left 0.3s ease;
+}
+
+#player.moving .right-leg {
+    animation: walk-right 0.3s ease;
+}
+
+#player.moving .left-arm {
+    animation: walk-right 0.3s ease;
+}
+
+#player.moving .right-arm {
+    animation: walk-left 0.3s ease;
+}
+
+/* Quest Markers */
+.quest-marker {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    z-index: 8;
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.quest-marker:hover {
+    transform: scale(1.1);
+}
+
+.quest-marker.kitchen {
+    background: #ff9800;
+}
+
+.quest-marker.pet {
+    background: #4caf50;
+}
+
+.quest-marker.school {
+    background: #2196f3;
+}
+
+/* Quest marker pulse animation */
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 255, 255, 0.7);
+    }
+    50% {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+}
+
+.quest-marker {
+    animation: pulse 2s infinite;
+}
+
+/* Panels */
+.quest-panel,
+.parent-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.quest-panel-content,
+.parent-panel-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.quest-panel-content h2,
+.parent-panel-content h2 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.quest-panel-content h3,
+.parent-panel-content h3 {
+    color: #667eea;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.quest-panel-content p {
+    color: #666;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.quest-rewards {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.reward-item {
+    margin: 8px 0;
+    font-size: 1.1em;
+}
+
+.reward-label {
+    font-weight: bold;
+    color: #333;
+}
+
+.reward-value {
+    color: #667eea;
+    font-weight: bold;
+}
+
+/* Buttons */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.3s;
+    margin: 5px;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5568d3;
+}
+
+.btn-secondary {
+    background: #ccc;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #bbb;
+}
+
+.btn-danger {
+    background: #f44336;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #d32f2f;
+}
+
+.quest-panel-buttons,
+.panel-buttons {
+    margin-top: 20px;
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 1em;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* Password Entry */
+.password-entry {
+    text-align: center;
+}
+
+.password-entry p {
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.password-entry input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 1em;
+    margin-bottom: 15px;
+}
+
+/* Quests List */
+.quests-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.quest-item {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.quest-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.quest-item-title {
+    font-weight: bold;
+    color: #333;
+}
+
+.quest-item-category {
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: white;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.quest-item-category.kitchen {
+    background: #ff9800;
+}
+
+.quest-item-category.pet {
+    background: #4caf50;
+}
+
+.quest-item-category.school {
+    background: #2196f3;
+}
+
+.quest-item-description {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+}
+
+.quest-item-xp {
+    color: #667eea;
+    font-weight: bold;
+}
+
+/* Hidden class */
+.hidden {
+    display: none !important;
 }

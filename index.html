@@ -3,18 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D RPG Game</title>
+    <title>HabitHero - Stack Your Habits!</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="game-container">
-        <h1>2D RPG Adventure</h1>
+        <h1>HabitHero</h1>
+        <p class="tagline">Stack Your Habits, Become a Hero!</p>
+
+        <!-- Player Stats -->
+        <div class="player-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span id="player-level" class="stat-value">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">XP:</span>
+                <span id="player-xp" class="stat-value">0</span>
+                <span class="stat-separator">/</span>
+                <span id="xp-needed" class="stat-value">100</span>
+            </div>
+            <div class="xp-bar-container">
+                <div id="xp-bar" class="xp-bar"></div>
+            </div>
+        </div>
+
+        <!-- Controls Info -->
         <div class="info">
-            <p>Use Arrow Keys to Move</p>
+            <p>Walk around and complete quests to earn XP!</p>
             <p>Position: <span id="position">X: 0, Y: 0</span></p>
         </div>
+
+        <!-- Parent Mode Button -->
+        <button id="parent-mode-btn" class="parent-mode-btn">Parent Mode</button>
+
+        <!-- Game World -->
         <div id="game-world">
             <div id="player"></div>
+            <div id="quest-markers"></div>
+        </div>
+
+        <!-- Quest Interaction Panel -->
+        <div id="quest-panel" class="quest-panel hidden">
+            <div class="quest-panel-content">
+                <h2 id="quest-title"></h2>
+                <p id="quest-description"></p>
+                <div class="quest-rewards">
+                    <div class="reward-item">
+                        <span class="reward-label">XP Reward:</span>
+                        <span id="quest-xp" class="reward-value"></span>
+                    </div>
+                    <div class="reward-item" id="quest-irl-reward-container">
+                        <span class="reward-label">IRL Reward:</span>
+                        <span id="quest-irl-reward" class="reward-value"></span>
+                    </div>
+                </div>
+                <div class="quest-panel-buttons">
+                    <button id="complete-quest-btn" class="btn btn-primary">Complete Quest</button>
+                    <button id="close-quest-btn" class="btn btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parent Mode Panel -->
+        <div id="parent-panel" class="parent-panel hidden">
+            <div class="parent-panel-content">
+                <h2>Parent Mode</h2>
+
+                <!-- Password Entry (first time) -->
+                <div id="parent-password-entry" class="password-entry">
+                    <p>Enter Parent Password:</p>
+                    <input type="password" id="parent-password-input" placeholder="Password">
+                    <div class="panel-buttons">
+                        <button id="parent-password-submit" class="btn btn-primary">Enter</button>
+                        <button id="parent-password-cancel" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </div>
+
+                <!-- Quest Management -->
+                <div id="parent-quest-management" class="quest-management hidden">
+                    <h3>Create New Quest</h3>
+                    <div class="form-group">
+                        <label>Quest Name:</label>
+                        <input type="text" id="new-quest-name" placeholder="e.g., Wash the Dishes">
+                    </div>
+                    <div class="form-group">
+                        <label>Description:</label>
+                        <textarea id="new-quest-description" placeholder="What needs to be done?"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Category:</label>
+                        <select id="new-quest-category">
+                            <option value="kitchen">Kitchen Quest</option>
+                            <option value="pet">Pet Quest</option>
+                            <option value="school">School Quest</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>XP Reward:</label>
+                        <input type="number" id="new-quest-xp" value="50" min="10" max="500">
+                    </div>
+                    <div class="form-group">
+                        <label>IRL Reward (optional):</label>
+                        <input type="text" id="new-quest-reward" placeholder="e.g., 30 min screen time">
+                    </div>
+                    <div class="panel-buttons">
+                        <button id="create-quest-btn" class="btn btn-primary">Create Quest</button>
+                        <button id="close-parent-panel" class="btn btn-secondary">Close</button>
+                    </div>
+
+                    <h3>Active Quests</h3>
+                    <div id="active-quests-list" class="quests-list"></div>
+                </div>
+            </div>
         </div>
     </div>
     <script src="src/game.js"></script>
