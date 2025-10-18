@@ -80,6 +80,7 @@
         <!-- NPC Interaction Panel -->
         <div id="quest-panel" class="quest-panel hidden">
             <div class="quest-panel-content">
+                <button class="modal-close-btn" id="quest-panel-close-x">✕</button>
                 <div class="npc-header">
                     <div id="npc-avatar" class="npc-avatar"></div>
                     <h2 id="npc-name"></h2>
@@ -125,6 +126,7 @@
         <!-- Parent Mode Panel -->
         <div id="parent-panel" class="parent-panel hidden">
             <div class="parent-panel-content">
+                <button class="modal-close-btn" id="parent-panel-close-x">✕</button>
                 <h2>Parent Mode</h2>
 
                 <!-- Password Entry (first time) -->
@@ -150,7 +152,7 @@
                     </div>
 
                     <h3>Create New Quests</h3>
-                    <p style="color: #666; font-size: 14px; margin-top: -10px;">Add multiple quests at once! Each level allows 5 active tasks.</p>
+                    <p style="color: #666; font-size: 14px; margin-top: -10px;">Add multiple quests at once! Each level allows 15 active tasks.</p>
 
                     <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #4caf50;">
                         <strong style="color: #2e7d32;">✨ Daily Chores!</strong>
@@ -199,6 +201,7 @@
         <!-- Reward Vault Panel -->
         <div id="reward-vault-panel" class="reward-vault-panel hidden">
             <div class="reward-vault-content">
+                <button class="modal-close-btn" id="reward-vault-close-x">✕</button>
                 <h2>💎 Reward Vault</h2>
                 <p class="vault-description">Complete quests to earn gems and unlock amazing rewards!</p>
 
@@ -228,6 +231,7 @@
     <!-- Welcome Modal -->
     <div id="welcome-modal" class="welcome-modal hidden">
         <div class="welcome-modal-content">
+            <button class="modal-close-btn" id="welcome-modal-close-x">✕</button>
             <div class="welcome-header">
                 <div class="welcome-greeting">
                     <h1 id="welcome-greeting-text">Good Morning, Hero!</h1>
@@ -294,7 +298,7 @@
                         </div>
                         <div class="progress-item">
                             <span class="progress-label">Tasks This Level:</span>
-                            <span class="progress-value" id="welcome-level-tasks">0 / 5</span>
+                            <span class="progress-value" id="welcome-level-tasks">0 / 15</span>
                         </div>
                     </div>
                 </div>
@@ -329,7 +333,7 @@
                     <h3>📜 Quests</h3>
                     <p>💬 Click or walk up to NPCs to get quests</p>
                     <p>✅ Accept quests and complete them for XP & gems</p>
-                    <p>📊 Complete 5 tasks per level to level up</p>
+                    <p>📊 Complete 15 tasks per level to level up</p>
                 </div>
                 <div class="help-section">
                     <h3>💎 Reward Vault</h3>

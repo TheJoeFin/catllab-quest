@@ -5,6 +5,12 @@ const WORLD_HEIGHT = 600;
 const MOVE_SPEED = TILE_SIZE;
 const PARENT_PASSWORD = 'hero123'; // Default password - can be changed
 
+// Leveling System Configuration
+// IMPORTANT: There is NO maximum level cap! Players can level up indefinitely.
+// - Each level requires: (level * 100) XP + completing 5 tasks at that level
+// - Quest difficulty (Easy/Medium/Hard) is separate from player level
+// - Interactive objects have difficulty tiers (1=Easy, 2=Medium, 3=Hard), NOT level requirements
+
 // Reward Vault configuration
 const DIFFICULTY_GEMS = {
     easy: 1,
@@ -643,7 +649,7 @@ function showWelcomeModal() {
     document.getElementById('welcome-completed-count').textContent = completedToday;
     
     const tasksAtCurrentLevel = tasksCompletedAtLevel[player.level] || 0;
-    document.getElementById('welcome-level-tasks').textContent = `${tasksAtCurrentLevel} / 5`;
+    document.getElementById('welcome-level-tasks').textContent = `${tasksAtCurrentLevel} / 15`;
     
     // Motivational quotes
     const quotes = [
@@ -694,9 +700,34 @@ function getNPCName(npcId) {
 }
 
 // Switch to a different room
-function switchRoom(roomId) {
+let isSwitchingRoom = false; // Flag to prevent recursive room switches
+
+function switchRoom(roomId, fromRoom = null) {
+    if (isSwitchingRoom) {
+        console.log('Already switching room, skipping...');
+        return;
+    }
+    
+    isSwitchingRoom = true;
+    
+    console.log('=== SWITCH ROOM DEBUG ===');
+    console.log('Switching to:', roomId);
+    console.log('From room param:', fromRoom);
+    console.log('Current player.currentRoom:', player.currentRoom);
+    
+    const previousRoom = player.currentRoom;
     player.currentRoom = roomId;
     const room = ROOMS[roomId];
+    
+    console.log('Previous room:', previousRoom);
+    console.log('New room ID:', roomId);
+    console.log('Room object exists?', !!room);
+    
+    if (!room) {
+        console.error('ERROR: Invalid room ID:', roomId);
+        isSwitchingRoom = false;
+        return;
+    }
 
     // Update room display
     currentRoomDisplay.textContent = room.name;
@@ -719,13 +750,46 @@ function switchRoom(roomId) {
         )
     `;
 
-    // Reset player position when switching rooms
-    player.x = 0;
-    player.y = 0;
+    // Position player at the corresponding door in the new room
+    // Find the door that leads back to where we came from
+    if (fromRoom || previousRoom) {
+        const sourceRoom = fromRoom || previousRoom;
+        const correspondingDoor = room.doors.find(door => door.to === sourceRoom);
+        
+        console.log('Looking for door back to:', sourceRoom);
+        console.log('Found corresponding door?', !!correspondingDoor);
+        
+        if (correspondingDoor) {
+            // Place player at the door position in the new room
+            player.x = correspondingDoor.x;
+            player.y = correspondingDoor.y;
+            console.log('Placed player at door:', correspondingDoor.x, correspondingDoor.y);
+        } else {
+            // No corresponding door found, use default position
+            player.x = 0;
+            player.y = 0;
+            console.log('No corresponding door, using default (0,0)');
+        }
+    } else {
+        // First time entering or no previous room, use default position
+        player.x = 0;
+        player.y = 0;
+        console.log('First time or no previous room, using default (0,0)');
+    }
+    
+    console.log('Final player position:', player.x, player.y);
+    console.log('About to call updatePlayerPosition()');
     updatePlayerPosition();
-
+    
+    console.log('About to call renderRoom()');
     // Render NPCs and obstacles for this room
     renderRoom();
+    
+    console.log('About to save game state');
+    // Save the room change
+    saveGameState();
+    
+    console.log('=== SWITCH ROOM COMPLETE ===');
 
     // Highlight active room button in quick nav
     document.querySelectorAll('.room-nav-btn').forEach(btn => {
@@ -734,18 +798,48 @@ function switchRoom(roomId) {
             btn.classList.add('active');
         }
     });
+    
+    // Reset the flag after a short delay to allow rendering to complete
+    setTimeout(() => {
+        isSwitchingRoom = false;
+        console.log('Room switch flag reset');
+    }, 100);
 }
 
 // Render NPCs, obstacles, and doors for current room
 function renderRoom() {
     const room = ROOMS[player.currentRoom];
     const npcsContainer = document.getElementById('npcs-container');
+    
+    console.log('=== RENDER ROOM DEBUG ===');
+    console.log('Current room ID:', player.currentRoom);
+    console.log('Room object:', room);
+    console.log('Room exists?', !!room);
+    console.log('npcsContainer element:', npcsContainer);
+    console.log('npcsContainer exists?', !!npcsContainer);
+    
+    if (!room) {
+        console.error('ERROR: Room not found for ID:', player.currentRoom);
+        return;
+    }
+    
+    if (!npcsContainer) {
+        console.error('ERROR: npcs-container element not found!');
+        return;
+    }
+    
+    console.log('Before clearing - npcsContainer.children.length:', npcsContainer.children.length);
     npcsContainer.innerHTML = '';
+    console.log('After clearing - npcsContainer.children.length:', npcsContainer.children.length);
     
     console.log('Rendering room:', player.currentRoom);
-    console.log('Room data:', room);
+    console.log('Room name:', room.name);
+    console.log('Doors:', room.doors?.length || 0);
+    console.log('Interactive objects:', room.interactiveObjects?.length || 0);
+    console.log('Main object:', room.mainObject?.name || 'none');
 
     // Render doors
+    console.log('Starting to render doors...');
     room.doors.forEach((door, index) => {
         const doorElement = document.createElement('div');
         doorElement.className = 'door';
@@ -827,6 +921,11 @@ function renderRoom() {
     } else {
         console.log('No main object in room');
     }
+    
+    console.log('=== RENDER COMPLETE ===');
+    console.log('Total children in npcsContainer:', npcsContainer.children.length);
+    console.log('Children elements:', Array.from(npcsContainer.children).map(el => el.className));
+    console.log('========================');
 }
 
 // Calculate XP needed for next level
@@ -853,11 +952,14 @@ function updatePlayerStats() {
 }
 
 // Add XP and check for level up
+// IMPORTANT: There is NO maximum level cap - players can level up indefinitely!
+// Each level requires more XP (100 * level) and 5 completed tasks.
 function addXp(amount) {
     player.xp += amount;
     const xpNeeded = getXpNeeded(player.level);
 
     // Check for level up - requires 5 completed tasks at current player level
+    // The while loop allows for multiple level ups if enough XP is gained
     while (player.xp >= xpNeeded) {
         const completedAtCurrentLevel = tasksCompletedAtLevel[player.level] || 0;
 
@@ -988,6 +1090,9 @@ function movePlayer(dx, dy) {
         setTimeout(() => {
             player.element.classList.remove('moving');
         }, 200);
+    } else {
+        // Collision detected - check if we bumped into an interactive object or main object
+        checkObjectBump(newX, newY);
     }
 }
 
@@ -1005,6 +1110,34 @@ function checkNPCProximity() {
                 showNPCPanel(npcId);
                 return;
             }
+        }
+    }
+}
+
+// Check if player bumped into an interactive object or main object
+function checkObjectBump(attemptedX, attemptedY) {
+    const room = ROOMS[player.currentRoom];
+    
+    // Check interactive objects
+    if (room.interactiveObjects) {
+        for (let obj of room.interactiveObjects) {
+            if (Math.abs(attemptedX - obj.x) < TILE_SIZE &&
+                Math.abs(attemptedY - obj.y) < TILE_SIZE) {
+                // Player bumped into this interactive object - auto-interact
+                showObjectQuestPanel(obj);
+                return;
+            }
+        }
+    }
+    
+    // Check main object (wizard, goblin, etc.)
+    if (room.mainObject) {
+        const mainObj = room.mainObject;
+        if (Math.abs(attemptedX - mainObj.x) < TILE_SIZE &&
+            Math.abs(attemptedY - mainObj.y) < TILE_SIZE) {
+            // Player bumped into main object - auto-interact
+            showMainObjectInfo(mainObj);
+            return;
         }
     }
 }
@@ -1093,7 +1226,7 @@ function completeQuest(quest) {
     // Show completion message
     const completedCount = tasksCompletedAtLevel[player.level];
     const difficultyLabel = quest.level === 1 ? 'Easy' : quest.level === 2 ? 'Medium' : 'Hard';
-    let message = `+${quest.xpReward} XP, +${quest.gemReward} Gem${quest.gemReward > 1 ? 's' : ''} • ${completedCount}/5 tasks at Player Level ${player.level}`;
+    let message = `+${quest.xpReward} XP, +${quest.gemReward} Gem${quest.gemReward > 1 ? 's' : ''} • ${completedCount}/15 tasks at Player Level ${player.level}`;
     showNotification('Quest Complete!', message, 'success', 4000);
 
     // Save state
@@ -1127,10 +1260,10 @@ function getTotalIncompleteTasks() {
     return quests.filter(q => !q.completed).length;
 }
 
-// Validate if we can add tasks to a level (max 5 per level)
+// Validate if we can add tasks to a level (max 15 per level)
 function canAddTasksToLevel(level, count = 1) {
     const currentCount = getIncompleteTasksForLevel(level);
-    return (currentCount + count) <= 5;
+    return (currentCount + count) <= 15;
 }
 
 // Check if total incomplete tasks will exceed warning threshold
@@ -1722,7 +1855,7 @@ function createQuestFormHTML(formId) {
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                 <div class="form-group">
                     <label>Level Required:</label>
-                    <input type="number" id="quest-level-${formId}" value="1" min="1" max="100">
+                    <input type="number" id="quest-level-${formId}" value="1" min="1" title="Player must be at this level to see this quest (no maximum)">
                 </div>
                 <div class="form-group">
                     <label>Difficulty:</label>
@@ -1734,7 +1867,7 @@ function createQuestFormHTML(formId) {
                 </div>
                 <div class="form-group">
                     <label>XP Reward:</label>
-                    <input type="number" id="quest-xp-${formId}" value="50" min="10" max="500">
+                    <input type="number" id="quest-xp-${formId}" value="50" min="10" title="Experience points awarded for completing this quest">
                 </div>
             </div>
             <div class="form-group">
@@ -1769,49 +1902,97 @@ function renderQuestTemplates() {
     let html = '';
     
     // Kitchen quests
-    html += '<div class="template-category"><h4>🏠 Kitchen Chores</h4>';
+    html += '<div class="template-category">';
+    html += '<h4 class="template-category-header" data-category="kitchen">🏠 Kitchen Chores <span class="category-toggle">▼</span></h4>';
+    html += '<div class="template-category-content">';
     QUEST_TEMPLATES.kitchen.forEach((template, idx) => {
         html += createTemplateCheckbox('kitchen', idx, template);
     });
-    html += '</div>';
+    html += '</div></div>';
     
     // Basement/Laundry quests
-    html += '<div class="template-category"><h4>🧺 Laundry & Basement</h4>';
+    html += '<div class="template-category">';
+    html += '<h4 class="template-category-header" data-category="basement">🧺 Laundry & Basement <span class="category-toggle">▼</span></h4>';
+    html += '<div class="template-category-content">';
     QUEST_TEMPLATES.basement.forEach((template, idx) => {
         html += createTemplateCheckbox('basement', idx, template);
     });
-    html += '</div>';
+    html += '</div></div>';
     
     // Pet Room quests
-    html += '<div class="template-category"><h4>🐾 Pet Care</h4>';
+    html += '<div class="template-category">';
+    html += '<h4 class="template-category-header" data-category="petroom">🐾 Pet Care <span class="category-toggle">▼</span></h4>';
+    html += '<div class="template-category-content">';
     QUEST_TEMPLATES.petroom.forEach((template, idx) => {
         html += createTemplateCheckbox('petroom', idx, template);
     });
-    html += '</div>';
+    html += '</div></div>';
     
     // Study quests
-    html += '<div class="template-category"><h4>📚 Homework & Study</h4>';
+    html += '<div class="template-category">';
+    html += '<h4 class="template-category-header" data-category="study">📚 Homework & Study <span class="category-toggle">▼</span></h4>';
+    html += '<div class="template-category-content">';
     QUEST_TEMPLATES.study.forEach((template, idx) => {
         html += createTemplateCheckbox('study', idx, template);
     });
-    html += '</div>';
+    html += '</div></div>';
     
     // Personal quests
-    html += '<div class="template-category"><h4>🛏️ Personal Habits</h4>';
+    html += '<div class="template-category">';
+    html += '<h4 class="template-category-header" data-category="personal">🛏️ Personal Habits <span class="category-toggle">▼</span></h4>';
+    html += '<div class="template-category-content">';
     QUEST_TEMPLATES.personal.forEach((template, idx) => {
         html += createTemplateCheckbox('personal', idx, template);
     });
-    html += '</div>';
+    html += '</div></div>';
     
     // Custom quests
-    html += '<div class="template-category"><h4>✏️ Custom Quests</h4>';
+    html += '<div class="template-category">';
+    html += '<h4 class="template-category-header" data-category="custom">✏️ Custom Quests <span class="category-toggle">▼</span></h4>';
+    html += '<div class="template-category-content">';
     html += '<p style="color: #666; font-size: 13px; margin-bottom: 10px;">Write in your own custom quests:</p>';
     for (let i = 0; i < 5; i++) {
         html += createCustomQuestInput(i);
     }
-    html += '</div>';
+    html += '</div></div>';
     
     container.innerHTML = html;
+    
+    // Add click handlers for collapsible headers
+    document.querySelectorAll('.template-category-header').forEach(header => {
+        header.addEventListener('click', toggleTemplateCategory);
+    });
+}
+
+// Toggle template category expansion
+function toggleTemplateCategory(event) {
+    const header = event.currentTarget;
+    const category = header.closest('.template-category');
+    const content = category.querySelector('.template-category-content');
+    const toggle = header.querySelector('.category-toggle');
+    
+    // Check if this category is already expanded
+    const isExpanded = category.classList.contains('expanded');
+    
+    // Collapse all categories first
+    document.querySelectorAll('.template-category').forEach(cat => {
+        cat.classList.remove('expanded');
+        const catContent = cat.querySelector('.template-category-content');
+        const catToggle = cat.querySelector('.category-toggle');
+        if (catContent) {
+            catContent.style.maxHeight = '0';
+        }
+        if (catToggle) {
+            catToggle.textContent = '▶';
+        }
+    });
+    
+    // If this category wasn't expanded, expand it now
+    if (!isExpanded) {
+        category.classList.add('expanded');
+        content.style.maxHeight = content.scrollHeight + 'px';
+        toggle.textContent = '▼';
+    }
 }
 
 function createTemplateCheckbox(category, idx, template) {
@@ -1935,8 +2116,11 @@ function createQuestsFromTemplates() {
         const newQuestsCount = quests.length;
         if (!canAddTasksToLevel(parseInt(level), newQuestsCount)) {
             const currentCount = getIncompleteTasksForLevel(parseInt(level));
-            showNotification('Too Many Tasks', `Level ${level} would exceed 5 task limit. Current: ${currentCount}, trying to add: ${newQuestsCount}`, 'warning', 5000);
-            return;
+            const shouldContinue = confirm(`⚠️ You might overload your kid. STOP!!!!\n\nLevel ${level} currently has ${currentCount} task${currentCount !== 1 ? 's' : ''}.\nYou're trying to add ${newQuestsCount} more, which would exceed the recommended limit of 15 tasks per level.\n\nDo you want to add these quests anyway?`);
+            
+            if (!shouldContinue) {
+                return;
+            }
         }
     }
     
@@ -2033,8 +2217,11 @@ function createAllQuestsFromForms() {
         const newQuestsCount = quests.length;
         if (!canAddTasksToLevel(parseInt(level), newQuestsCount)) {
             const currentCount = getIncompleteTasksForLevel(parseInt(level));
-            showNotification('Too Many Tasks', `Level ${level} would exceed 5 task limit. Current: ${currentCount}, trying to add: ${newQuestsCount}`, 'warning', 5000);
-            return;
+            const shouldContinue = confirm(`⚠️ You might overload your kid. STOP!!!!\n\nLevel ${level} currently has ${currentCount} task${currentCount !== 1 ? 's' : ''}.\nYou're trying to add ${newQuestsCount} more, which would exceed the recommended limit of 15 tasks per level.\n\nDo you want to add these quests anyway?`);
+            
+            if (!shouldContinue) {
+                return;
+            }
         }
     }
 
@@ -2087,10 +2274,14 @@ function createQuestFromForm() {
         return;
     }
 
-    // Validate: Check if level already has 5 incomplete tasks
+    // Validate: Check if level already has 15 incomplete tasks
     if (!canAddTasksToLevel(level, 1)) {
-        showNotification('Level Full', `Level ${level} already has 5 tasks. Complete some first or use a different level.`, 'warning', 4000);
-        return;
+        const currentCount = getIncompleteTasksForLevel(level);
+        const shouldContinue = confirm(`⚠️ You might overload your kid. STOP!!!!\n\nLevel ${level} already has ${currentCount} task${currentCount !== 1 ? 's' : ''}, which exceeds the recommended limit of 15 tasks.\n\nDo you want to add this quest anyway?`);
+        
+        if (!shouldContinue) {
+            return;
+        }
     }
 
     // Warning: Check if total incomplete tasks will reach 10
@@ -2174,7 +2365,7 @@ function updateActiveQuestsList() {
                     <div class="quest-item-description">${quest.description}</div>
                     <div class="quest-item-meta">
                         <span>📍 ${room.emoji} ${room.name}</span>
-                        <span>⭐ Level ${quest.level} (${incompleteAtLevel}/5 tasks)</span>
+                        <span>⭐ Level ${quest.level} (${incompleteAtLevel}/15 tasks)</span>
                     </div>
                     <div class="quest-item-xp">Reward: ${quest.xpReward} XP, ${quest.gemReward} 💎${quest.irlReward ? ' + ' + quest.irlReward : ''}</div>
                     ${deleteButton}
@@ -2261,6 +2452,13 @@ function handleMovement() {
 
 // Click/Tap to move
 gameWorld.addEventListener('click', (e) => {
+    // Handle clicks on interactive objects - auto-interact
+    if (e.target.classList.contains('interactive-object') || e.target.closest('.interactive-object')) {
+        // The click event on the object itself will handle the interaction
+        // (already set up in renderRoom)
+        return;
+    }
+    
     // Ignore clicks on NPCs and doors
     if (e.target.classList.contains('npc') || e.target.closest('.npc') ||
         e.target.classList.contains('door') || e.target.closest('.door')) {
@@ -2362,6 +2560,35 @@ function setupEventListeners() {
     });
     document.getElementById('close-quest-btn').addEventListener('click', hideNPCPanel);
     document.getElementById('close-npc-btn').addEventListener('click', hideNPCPanel);
+    
+    // X button close handlers for all panels/modals
+    document.getElementById('quest-panel-close-x').addEventListener('click', hideNPCPanel);
+    document.getElementById('parent-panel-close-x').addEventListener('click', hideParentMode);
+    document.getElementById('reward-vault-close-x').addEventListener('click', hideRewardVault);
+    document.getElementById('welcome-modal-close-x').addEventListener('click', closeWelcomeModal);
+    
+    // Soft dismiss - clicking outside modal/panel to close (only for safe modals)
+    setupSoftDismiss('quest-panel', 'quest-panel-content', hideNPCPanel);
+    setupSoftDismiss('reward-vault-panel', 'reward-vault-content', hideRewardVault);
+    setupSoftDismiss('welcome-modal', 'welcome-modal-content', closeWelcomeModal);
+    setupSoftDismiss('help-modal', 'help-modal-content', hideHelpModal);
+    setupSoftDismiss('template-modal', 'template-modal-content', hideQuestTemplates);
+    // Note: parent-panel does NOT have soft dismiss as it may have unsaved form data
+}
+
+// Setup soft dismiss for a modal/panel
+function setupSoftDismiss(panelId, contentId, closeFunction) {
+    const panel = document.getElementById(panelId);
+    const content = document.getElementById(contentId);
+    
+    if (panel && content) {
+        panel.addEventListener('click', (e) => {
+            // Only close if clicking the backdrop, not the content
+            if (e.target === panel) {
+                closeFunction();
+            }
+        });
+    }
 }
 
 // Storage functions

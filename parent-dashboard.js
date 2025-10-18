@@ -400,6 +400,27 @@ function init() {
         refreshDashboard();
     }, 30000);
     
+    // Set up modal close button
+    const closeModalBtn = document.getElementById('grant-reward-modal-close-x');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            const modal = document.getElementById('grant-reward-modal');
+            modal.classList.remove('active');
+        });
+    }
+    
+    // Set up soft dismiss for modal (clicking outside)
+    const modal = document.getElementById('grant-reward-modal');
+    const modalContent = modal.querySelector('.modal-content');
+    if (modal && modalContent) {
+        modal.addEventListener('click', (e) => {
+            // Only close if clicking the backdrop, not the content
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+    }
+    
     console.log('🏆 Parent Dashboard loaded!');
     console.log(`📊 Tracking ${quests.length} total quests`);
     console.log(`💎 Child has ${playerData.gems} gems`);
