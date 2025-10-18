@@ -12,15 +12,15 @@ const DIFFICULTY_GEMS = {
     hard: 3
 };
 
-// Room definitions
+// Room definitions with themed furniture
 const ROOMS = {
     kitchen: {
         name: 'Kitchen',
         emoji: '🏠',
         background: ['#ffeb3b', '#ffc107'],
         obstacles: [
-            { x: 200, y: 120 },
-            { x: 400, y: 120 }
+            { x: 200, y: 120, type: 'table', emoji: '🍽️' },
+            { x: 400, y: 120, type: 'stove', emoji: '🔥' }
         ],
         doors: [
             { x: 40, y: 520, to: 'basement', label: 'Basement', emoji: '🧺', color: '#607d8b' },
@@ -33,12 +33,14 @@ const ROOMS = {
         emoji: '🧺',
         background: ['#607d8b', '#455a64'],
         obstacles: [
-            { x: 160, y: 80 },
-            { x: 360, y: 200 },
-            { x: 440, y: 360 }
+            { x: 160, y: 80, type: 'washer', emoji: '🧼' },
+            { x: 360, y: 200, type: 'dryer', emoji: '👕' },
+            { x: 440, y: 360, type: 'basket', emoji: '🧺' }
         ],
         doors: [
-            { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' }
+            { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' },
+            { x: 40, y: 520, to: 'petroom', label: 'Pet Room', emoji: '🐾', color: '#8bc34a' },
+            { x: 520, y: 520, to: 'study', label: 'Study', emoji: '📚', color: '#9c27b0' }
         ]
     },
     petroom: {
@@ -46,12 +48,14 @@ const ROOMS = {
         emoji: '🐾',
         background: ['#8bc34a', '#7cb342'],
         obstacles: [
-            { x: 240, y: 160 },
-            { x: 400, y: 240 },
-            { x: 520, y: 120 }
+            { x: 240, y: 160, type: 'bed', emoji: '🛏️' },
+            { x: 400, y: 240, type: 'bowl', emoji: '🥣' },
+            { x: 520, y: 120, type: 'plant', emoji: '🪴' }
         ],
         doors: [
-            { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' }
+            { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' },
+            { x: 40, y: 520, to: 'basement', label: 'Basement', emoji: '🧺', color: '#607d8b' },
+            { x: 520, y: 520, to: 'study', label: 'Study', emoji: '📚', color: '#9c27b0' }
         ]
     },
     study: {
@@ -59,12 +63,14 @@ const ROOMS = {
         emoji: '📚',
         background: ['#9c27b0', '#7b1fa2'],
         obstacles: [
-            { x: 200, y: 200 },
-            { x: 400, y: 160 },
-            { x: 480, y: 360 }
+            { x: 200, y: 200, type: 'desk', emoji: '🪑' },
+            { x: 400, y: 160, type: 'bookshelf', emoji: '📚' },
+            { x: 480, y: 360, type: 'plant', emoji: '🌿' }
         ],
         doors: [
-            { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' }
+            { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' },
+            { x: 40, y: 520, to: 'basement', label: 'Basement', emoji: '🧺', color: '#607d8b' },
+            { x: 520, y: 520, to: 'petroom', label: 'Pet Room', emoji: '🐾', color: '#8bc34a' }
         ]
     }
 };
@@ -124,9 +130,15 @@ const player = {
     element: document.getElementById('player')
 };
 
-// Add limbs to player character
+// Add limbs and face to player character
 function initPlayerCharacter() {
     const playerEl = player.element;
+
+    // Create eyes (Roblox style)
+    const leftEye = document.createElement('div');
+    leftEye.className = 'player-eye left-eye';
+    const rightEye = document.createElement('div');
+    rightEye.className = 'player-eye right-eye';
 
     // Create arms
     const leftArm = document.createElement('div');
@@ -144,6 +156,8 @@ function initPlayerCharacter() {
     const smile = document.createElement('div');
     smile.className = 'player-smile';
 
+    playerEl.appendChild(leftEye);
+    playerEl.appendChild(rightEye);
     playerEl.appendChild(leftArm);
     playerEl.appendChild(rightArm);
     playerEl.appendChild(leftLeg);
@@ -154,7 +168,6 @@ function initPlayerCharacter() {
 initPlayerCharacter();
 
 // UI Elements
-const positionDisplay = document.getElementById('position');
 const currentRoomDisplay = document.getElementById('current-room');
 const playerLevelDisplay = document.getElementById('player-level');
 const playerXpDisplay = document.getElementById('player-xp');
@@ -561,8 +574,8 @@ function switchRoom(roomId) {
     // Render NPCs and obstacles for this room
     renderRoom();
 
-    // Highlight active room button
-    document.querySelectorAll('.room-btn').forEach(btn => {
+    // Highlight active room button in quick nav
+    document.querySelectorAll('.room-nav-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.room === roomId) {
             btn.classList.add('active');
@@ -602,12 +615,27 @@ function renderRoom() {
         npcsContainer.appendChild(doorElement);
     });
 
-    // Render obstacles
+    // Render obstacles (furniture)
     room.obstacles.forEach((obs, index) => {
         const obstacle = document.createElement('div');
-        obstacle.className = 'obstacle';
+        obstacle.className = 'obstacle furniture';
         obstacle.style.left = obs.x + 'px';
         obstacle.style.top = obs.y + 'px';
+        
+        // Add emoji for furniture type
+        if (obs.emoji) {
+            obstacle.textContent = obs.emoji;
+            obstacle.style.fontSize = '24px';
+            obstacle.style.display = 'flex';
+            obstacle.style.alignItems = 'center';
+            obstacle.style.justifyContent = 'center';
+        }
+        
+        // Add title for hover tooltip
+        if (obs.type) {
+            obstacle.title = obs.type.charAt(0).toUpperCase() + obs.type.slice(1);
+        }
+        
         npcsContainer.appendChild(obstacle);
     });
 
@@ -719,7 +747,6 @@ function showLevelUpNotification() {
 function updatePlayerPosition() {
     player.element.style.left = player.x + 'px';
     player.element.style.top = player.y + 'px';
-    positionDisplay.textContent = `X: ${Math.floor(player.x / TILE_SIZE)}, Y: ${Math.floor(player.y / TILE_SIZE)}`;
 
     // Check for door proximity first (higher priority)
     if (checkDoorProximity()) {
@@ -1955,8 +1982,8 @@ function setupEventListeners() {
     // Welcome modal
     document.getElementById('welcome-start-btn').addEventListener('click', closeWelcomeModal);
 
-    // Room navigation
-    document.querySelectorAll('.room-btn').forEach(btn => {
+    // Room quick navigation buttons
+    document.querySelectorAll('.room-nav-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             switchRoom(btn.dataset.room);
         });

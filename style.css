@@ -19,13 +19,13 @@ body {
     display: flex;
     gap: 20px;
     background: transparent;
-    max-width: 1000px;
+    max-width: 1400px;
     width: 100%;
 }
 
 /* Left Sidebar */
 .left-sidebar {
-    width: 280px;
+    width: 260px;
     background: rgba(255, 255, 255, 0.95);
     padding: 25px;
     border-radius: 15px;
@@ -56,6 +56,25 @@ body {
     text-align: center;
 }
 
+/* Right Sidebar - Active Quests */
+.right-sidebar {
+    width: 280px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.right-sidebar h2 {
+    color: #667eea;
+    margin: 0;
+    font-size: 1.5em;
+    text-align: center;
+}
+
 /* Main Game Area */
 .main-game-area {
     flex: 1;
@@ -64,15 +83,7 @@ body {
     gap: 10px;
 }
 
-.position-display {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 10px;
-    border-radius: 8px;
-    text-align: center;
-    color: #666;
-    font-size: 0.9em;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
+/* Position display removed */
 
 /* Player Stats */
 .player-stats {
@@ -120,16 +131,11 @@ body {
     border-radius: 10px;
 }
 
-/* Player Quests Section */
-.player-quests {
-    background: #f8f8f8;
-    padding: 15px;
-    border-radius: 10px;
-}
-
+/* Player Quests Section (now in right sidebar) */
 .player-quest-list {
-    max-height: 300px;
+    max-height: calc(100vh - 200px);
     overflow-y: auto;
+    flex: 1;
 }
 
 .player-quest-list::-webkit-scrollbar {
@@ -168,15 +174,46 @@ body {
 /* Current Location */
 .current-location {
     background: #f8f8f8;
-    padding: 15px;
+    padding: 12px;
     border-radius: 10px;
 }
 
 .current-location p {
-    margin: 0;
-    font-size: 1.2em;
+    margin: 0 0 8px 0;
+    font-size: 1.1em;
     color: #333;
     font-weight: bold;
+}
+
+.room-quick-nav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.room-nav-btn {
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    padding: 8px 4px;
+    font-size: 1.3em;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.room-nav-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-color: #667eea;
+}
+
+.room-nav-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 #position {
@@ -238,15 +275,27 @@ body {
     background-color: rgba(255, 255, 255, 0.95);
 }
 
-/* Obstacles (rendered dynamically per room) */
+/* Obstacles/Furniture (rendered dynamically per room) */
 .obstacle {
     position: absolute;
     width: 40px;
     height: 40px;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(139, 69, 19, 0.3);
     border-radius: 8px;
-    border: 2px solid rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(101, 67, 33, 0.6);
     z-index: 5;
+    transition: all 0.2s;
+}
+
+.obstacle.furniture {
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    cursor: help;
+}
+
+.obstacle.furniture:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Doors */
@@ -314,7 +363,7 @@ body {
     animation: doorGlow 1s infinite;
 }
 
-/* Player - Human Character */
+/* Player - Roblox-style Character */
 #player {
     position: absolute;
     width: 40px;
@@ -323,30 +372,30 @@ body {
     z-index: 10;
 }
 
-/* Head */
+/* Head - More blocky like Roblox */
 #player::before {
     content: '';
     position: absolute;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     background: #ffd1a3;
-    border-radius: 50%;
+    border-radius: 4px;
     top: 0;
-    left: 10px;
+    left: 9px;
     border: 2px solid #333;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Body */
+/* Body - Blockier torso like Roblox */
 #player::after {
     content: '';
     position: absolute;
-    width: 24px;
-    height: 20px;
+    width: 26px;
+    height: 18px;
     background: #2196f3;
-    border-radius: 8px 8px 4px 4px;
-    top: 18px;
-    left: 8px;
+    border-radius: 3px;
+    top: 20px;
+    left: 7px;
     border: 2px solid #333;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -364,51 +413,62 @@ body {
     pointer-events: none;
 }
 
-/* Creating eyes with box-shadow on the head */
-#player::before {
-    box-shadow:
-        -4px 8px 0 -2px var(--eye-color),
-        4px 8px 0 -2px var(--eye-color),
-        0 2px 4px rgba(0, 0, 0, 0.2);
+/* Eyes - Roblox style (two separate circular eyes) */
+.player-eye {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #333;
+    border-radius: 50%;
+    top: 8px;
+    z-index: 2;
 }
 
-/* Smile */
+.player-eye.left-eye {
+    left: 13px;
+}
+
+.player-eye.right-eye {
+    left: 22px;
+}
+
+/* Smile - Simple curved line */
 .player-smile {
     position: absolute;
     width: 10px;
-    height: 6px;
+    height: 5px;
     border: 2px solid #333;
     border-top: none;
-    border-radius: 0 0 10px 10px;
-    top: 12px;
+    border-radius: 0 0 8px 8px;
+    top: 15px;
     left: 15px;
-    z-index: 1;
+    z-index: 2;
 }
 
-/* Arms */
+/* Arms - Blockier like Roblox */
 .player-arm {
     position: absolute;
-    width: 4px;
-    height: 14px;
+    width: 5px;
+    height: 16px;
     background: #ffd1a3;
     border: 1px solid #333;
     border-radius: 2px;
-    top: 20px;
+    top: 21px;
 }
 
 .left-arm {
-    left: 4px;
+    left: 2px;
 }
 
 .right-arm {
-    right: 4px;
+    right: 2px;
 }
 
-/* Legs */
+/* Legs - Blockier like Roblox */
 .player-leg {
     position: absolute;
-    width: 6px;
-    height: 12px;
+    width: 8px;
+    height: 14px;
     background: #1976d2;
     border: 1px solid #333;
     border-radius: 2px;
@@ -416,11 +476,11 @@ body {
 }
 
 .left-leg {
-    left: 12px;
+    left: 10px;
 }
 
 .right-leg {
-    right: 12px;
+    right: 10px;
 }
 
 /* Movement animation */

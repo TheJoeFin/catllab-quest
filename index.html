@@ -35,23 +35,21 @@
                 </div>
             </div>
 
-            <!-- Active Quests -->
-            <div class="player-quests">
-                <h3>Active Quests</h3>
-                <div id="player-quest-list" class="player-quest-list">
-                    <p style="color: #999; font-size: 14px;">No active quests. Talk to NPCs!</p>
-                </div>
-            </div>
-
             <!-- Help Icon -->
             <button id="help-btn" class="help-btn" title="Show Controls">
                 ❓ Help
             </button>
 
-            <!-- Current Room -->
+            <!-- Current Room & Navigation -->
             <div class="current-location">
                 <h3>Current Room</h3>
                 <p><span id="current-room">Kitchen</span></p>
+                <div class="room-quick-nav">
+                    <button class="room-nav-btn" data-room="kitchen" title="Kitchen">🏠</button>
+                    <button class="room-nav-btn" data-room="basement" title="Basement">🧺</button>
+                    <button class="room-nav-btn" data-room="petroom" title="Pet Room">🐾</button>
+                    <button class="room-nav-btn" data-room="study" title="Study">📚</button>
+                </div>
             </div>
 
             <!-- Reward Vault Button -->
@@ -60,13 +58,6 @@
             <!-- Parent Mode Button -->
             <button id="parent-mode-btn" class="parent-mode-btn">🔒 Parent Mode</button>
 
-            <!-- Room Navigation (Hidden) -->
-            <div id="room-nav" class="room-nav">
-                <button class="room-btn" data-room="kitchen">🏠 Kitchen</button>
-                <button class="room-btn" data-room="basement">🧺 Basement</button>
-                <button class="room-btn" data-room="petroom">🐾 Pet Room</button>
-                <button class="room-btn" data-room="study">📚 Study</button>
-            </div>
         </div>
 
         <!-- Main Game Area -->
@@ -76,10 +67,13 @@
                 <div id="player"></div>
                 <div id="npcs-container"></div>
             </div>
+        </div>
 
-            <!-- Position Display -->
-            <div class="position-display">
-                Position: <span id="position">X: 0, Y: 0</span>
+        <!-- Right Sidebar - Active Quests -->
+        <div class="right-sidebar">
+            <h2>Active Quests</h2>
+            <div id="player-quest-list" class="player-quest-list">
+                <p style="color: #999; font-size: 14px;">No active quests. Talk to NPCs!</p>
             </div>
         </div>
 
