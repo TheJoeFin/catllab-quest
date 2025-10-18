@@ -112,6 +112,11 @@ h1 {
     background: #f57c00;
 }
 
+/* Room Navigation - Hidden (doors replace buttons) */
+.room-nav {
+    display: none;
+}
+
 /* Game World */
 #game-world {
     position: relative;
@@ -138,23 +143,80 @@ h1 {
     margin: 0 auto;
 }
 
-/* Trees/obstacles */
-#game-world::before {
-    content: '';
+/* Obstacles (rendered dynamically per room) */
+.obstacle {
     position: absolute;
     width: 40px;
     height: 40px;
-    background: #2e7d32;
-    border-radius: 50%;
-    top: 80px;
-    left: 200px;
-    box-shadow:
-        160px 0 0 #2e7d32,
-        0 160px 0 #2e7d32,
-        320px 240px 0 #2e7d32,
-        120px 360px 0 #2e7d32,
-        400px 120px 0 #2e7d32;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 2px solid rgba(0, 0, 0, 0.4);
     z-index: 5;
+}
+
+/* Doors */
+.door {
+    position: absolute;
+    width: 40px;
+    height: 60px;
+    background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
+    border: 4px solid #333;
+    border-radius: 8px;
+    z-index: 7;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.door:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+}
+
+.door::before {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #ffd700;
+    border-radius: 50%;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    box-shadow: 0 0 4px rgba(255, 215, 0, 0.5);
+}
+
+.door-label {
+    font-size: 20px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.door-text {
+    font-size: 8px;
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    line-height: 1;
+}
+
+/* Door hover effect */
+@keyframes doorGlow {
+    0%, 100% {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), 0 0 0 0 rgba(255, 255, 255, 0.4);
+    }
+    50% {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), 0 0 8px 2px rgba(255, 255, 255, 0.6);
+    }
+}
+
+.door:hover {
+    animation: doorGlow 1s infinite;
 }
 
 /* Player - Human Character */
@@ -302,11 +364,11 @@ h1 {
     animation: walk-left 0.3s ease;
 }
 
-/* Quest Markers */
-.quest-marker {
+/* NPCs */
+.npc {
     position: absolute;
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     border: 3px solid #fff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
@@ -316,37 +378,44 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 28px;
 }
 
-.quest-marker:hover {
-    transform: scale(1.1);
+.npc:hover {
+    transform: scale(1.15);
 }
 
-.quest-marker.kitchen {
-    background: #ff9800;
-}
-
-.quest-marker.pet {
-    background: #4caf50;
-}
-
-.quest-marker.school {
-    background: #2196f3;
-}
-
-/* Quest marker pulse animation */
-@keyframes pulse {
+/* NPC with quest indicator - pulse animation */
+@keyframes questPulse {
     0%, 100% {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 255, 255, 0.7);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 215, 0, 0.7);
     }
     50% {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 0 10px rgba(255, 255, 255, 0);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 0 12px rgba(255, 215, 0, 0);
     }
 }
 
-.quest-marker {
-    animation: pulse 2s infinite;
+.npc.has-quest {
+    animation: questPulse 1.5s infinite;
+    border-color: #ffd700;
+}
+
+.npc.has-quest::after {
+    content: '!';
+    position: absolute;
+    top: -10px;
+    right: -5px;
+    background: #ffd700;
+    color: #333;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    border: 2px solid #fff;
 }
 
 /* Panels */
@@ -392,6 +461,56 @@ h1 {
     color: #666;
     margin-bottom: 15px;
     line-height: 1.6;
+}
+
+/* NPC Header in Quest Panel */
+.npc-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.npc-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.npc-dialogue {
+    font-style: italic;
+    background: #f8f8f8;
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+/* Rename Pet Button */
+.btn-rename {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    margin-left: auto;
+}
+
+.btn-rename:hover {
+    background: #5568d3;
+    transform: scale(1.1);
 }
 
 .quest-rewards {
@@ -536,24 +655,15 @@ h1 {
     color: #333;
 }
 
-.quest-item-category {
-    padding: 3px 8px;
-    border-radius: 5px;
+.quest-item-npc {
+    padding: 5px 12px;
+    border-radius: 15px;
     color: white;
     font-size: 0.8em;
     font-weight: bold;
-}
-
-.quest-item-category.kitchen {
-    background: #ff9800;
-}
-
-.quest-item-category.pet {
-    background: #4caf50;
-}
-
-.quest-item-category.school {
-    background: #2196f3;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .quest-item-description {

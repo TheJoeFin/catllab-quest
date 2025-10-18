@@ -5,12 +5,114 @@ const WORLD_HEIGHT = 600;
 const MOVE_SPEED = TILE_SIZE;
 const PARENT_PASSWORD = 'hero123'; // Default password - can be changed
 
+// Room definitions
+const ROOMS = {
+    kitchen: {
+        name: 'Kitchen',
+        emoji: '🏠',
+        background: ['#ffeb3b', '#ffc107'],
+        obstacles: [
+            { x: 200, y: 120 },
+            { x: 400, y: 120 }
+        ],
+        doors: [
+            { x: 40, y: 520, to: 'basement', label: 'Basement', emoji: '🧺', color: '#607d8b' },
+            { x: 280, y: 520, to: 'petroom', label: 'Pet Room', emoji: '🐾', color: '#8bc34a' },
+            { x: 520, y: 520, to: 'study', label: 'Study', emoji: '📚', color: '#9c27b0' }
+        ]
+    },
+    basement: {
+        name: 'Basement',
+        emoji: '🧺',
+        background: ['#607d8b', '#455a64'],
+        obstacles: [
+            { x: 160, y: 80 },
+            { x: 360, y: 200 },
+            { x: 440, y: 360 }
+        ],
+        doors: [
+            { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' }
+        ]
+    },
+    petroom: {
+        name: 'Pet Room',
+        emoji: '🐾',
+        background: ['#8bc34a', '#7cb342'],
+        obstacles: [
+            { x: 240, y: 160 },
+            { x: 400, y: 240 },
+            { x: 520, y: 120 }
+        ],
+        doors: [
+            { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' }
+        ]
+    },
+    study: {
+        name: 'Study',
+        emoji: '📚',
+        background: ['#9c27b0', '#7b1fa2'],
+        obstacles: [
+            { x: 200, y: 200 },
+            { x: 400, y: 160 },
+            { x: 480, y: 360 }
+        ],
+        doors: [
+            { x: 280, y: 40, to: 'kitchen', label: 'Kitchen', emoji: '🏠', color: '#ffeb3b' }
+        ]
+    }
+};
+
+// NPC definitions
+const NPCS = {
+    wizard: {
+        name: 'Chef Wizard',
+        emoji: '🧙',
+        room: 'kitchen',
+        x: 280,
+        y: 280,
+        color: '#9c27b0',
+        dialogue: "Greetings, young hero! I need help in the kitchen.",
+        noQuestDialogue: "The kitchen is spotless! Come back when there's more work to do."
+    },
+    goblin: {
+        name: 'Laundry Goblin',
+        emoji: '👹',
+        room: 'basement',
+        x: 280,
+        y: 320,
+        color: '#4caf50',
+        dialogue: "Oi! Got some laundry that needs doing, if ye're up for it!",
+        noQuestDialogue: "All clean! The goblin is pleased. Return when the laundry piles up again!"
+    },
+    pet: {
+        name: 'Fluffy', // Default name, can be customized
+        emoji: '🐱',
+        room: 'petroom',
+        x: 300,
+        y: 240,
+        color: '#ff9800',
+        dialogue: "*Meow!* I need your help with something!",
+        noQuestDialogue: "*Purr purr* Everything is purrfect right now. Thanks for checking on me!"
+    },
+    owl: {
+        name: 'Scholar Owl',
+        emoji: '🦉',
+        room: 'study',
+        x: 260,
+        y: 200,
+        color: '#2196f3',
+        dialogue: "Hoot hoot! I have some scholarly tasks that need your attention.",
+        noQuestDialogue: "Your studies are complete for now. Well done! *Hoot*"
+    }
+};
+
 // Player state
 const player = {
     x: 0,
     y: 0,
     level: 1,
     xp: 0,
+    currentRoom: 'kitchen',
     element: document.getElementById('player')
 };
 
@@ -45,43 +147,155 @@ initPlayerCharacter();
 
 // UI Elements
 const positionDisplay = document.getElementById('position');
+const currentRoomDisplay = document.getElementById('current-room');
 const playerLevelDisplay = document.getElementById('player-level');
 const playerXpDisplay = document.getElementById('player-xp');
 const xpNeededDisplay = document.getElementById('xp-needed');
 const xpBar = document.getElementById('xp-bar');
+const gameWorld = document.getElementById('game-world');
 
-// Obstacles (trees) positions
-const obstacles = [
-    { x: 200, y: 80 },
-    { x: 360, y: 80 },
-    { x: 200, y: 240 },
-    { x: 520, y: 320 },
-    { x: 240, y: 440 },
-    { x: 520, y: 200 }
-];
+// Quest system - now tied to NPCs
+let quests = []; // Each quest will have { npcId, name, description, xpReward, irlReward }
+let currentNPC = null;
 
-// Quest system
-let quests = [];
-let currentQuest = null;
-
-// Category emojis
-const categoryEmojis = {
-    kitchen: '🍳',
-    pet: '🐾',
-    school: '📚'
-};
+// Pet customization
+let petName = 'Fluffy'; // Default name
 
 // Initialize game
 function init() {
     loadGameState();
+    loadPetName();
     updatePlayerStats();
-    updatePlayerPosition();
-    renderQuestMarkers();
+    switchRoom(player.currentRoom);
     setupEventListeners();
 
     console.log('🎮 HabitHero loaded!');
-    console.log('Parents: Click "Parent Mode" to create quests');
-    console.log('Kids: Walk to quest markers to complete them!');
+    console.log('🚪 Walk through doors to explore different rooms!');
+    console.log('👨‍👩‍👧 Parents: Click "Parent Mode" to create quests');
+    console.log('🧒 Kids: Talk to NPCs to get quests!');
+}
+
+// Get the current pet name
+function getPetName() {
+    return petName;
+}
+
+// Get NPC display name (use custom name for pet)
+function getNPCName(npcId) {
+    if (npcId === 'pet') {
+        return getPetName();
+    }
+    return NPCS[npcId].name;
+}
+
+// Switch to a different room
+function switchRoom(roomId) {
+    player.currentRoom = roomId;
+    const room = ROOMS[roomId];
+
+    // Update room display
+    currentRoomDisplay.textContent = room.name;
+
+    // Update room background
+    gameWorld.style.background = `
+        repeating-linear-gradient(
+            0deg,
+            ${room.background[0]} 0px,
+            ${room.background[0]} 40px,
+            ${room.background[1]} 40px,
+            ${room.background[1]} 80px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            ${room.background[0]} 0px,
+            ${room.background[0]} 40px,
+            ${room.background[1]} 40px,
+            ${room.background[1]} 80px
+        )
+    `;
+
+    // Reset player position when switching rooms
+    player.x = 0;
+    player.y = 0;
+    updatePlayerPosition();
+
+    // Render NPCs and obstacles for this room
+    renderRoom();
+
+    // Highlight active room button
+    document.querySelectorAll('.room-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.room === roomId) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+// Render NPCs, obstacles, and doors for current room
+function renderRoom() {
+    const room = ROOMS[player.currentRoom];
+    const npcsContainer = document.getElementById('npcs-container');
+    npcsContainer.innerHTML = '';
+
+    // Render doors
+    room.doors.forEach((door, index) => {
+        const doorElement = document.createElement('div');
+        doorElement.className = 'door';
+        doorElement.style.left = door.x + 'px';
+        doorElement.style.top = door.y + 'px';
+        doorElement.style.borderColor = door.color;
+        doorElement.dataset.doorTo = door.to;
+
+        const doorLabel = document.createElement('div');
+        doorLabel.className = 'door-label';
+        doorLabel.textContent = door.emoji;
+        doorElement.appendChild(doorLabel);
+
+        const doorText = document.createElement('div');
+        doorText.className = 'door-text';
+        doorText.textContent = door.label;
+        doorElement.appendChild(doorText);
+
+        doorElement.addEventListener('click', () => {
+            switchRoom(door.to);
+        });
+
+        npcsContainer.appendChild(doorElement);
+    });
+
+    // Render obstacles
+    room.obstacles.forEach((obs, index) => {
+        const obstacle = document.createElement('div');
+        obstacle.className = 'obstacle';
+        obstacle.style.left = obs.x + 'px';
+        obstacle.style.top = obs.y + 'px';
+        npcsContainer.appendChild(obstacle);
+    });
+
+    // Render NPCs in this room
+    Object.entries(NPCS).forEach(([npcId, npc]) => {
+        if (npc.room === player.currentRoom) {
+            const npcElement = document.createElement('div');
+            npcElement.className = 'npc';
+            npcElement.style.left = npc.x + 'px';
+            npcElement.style.top = npc.y + 'px';
+            npcElement.style.background = npc.color;
+            npcElement.textContent = npc.emoji;
+            npcElement.dataset.npcId = npcId;
+
+            // Check if NPC has a quest
+            const hasQuest = quests.some(q => q.npcId === npcId);
+            if (hasQuest) {
+                npcElement.classList.add('has-quest');
+            }
+
+            npcElement.addEventListener('click', () => {
+                showNPCPanel(npcId);
+            });
+
+            npcsContainer.appendChild(npcElement);
+        }
+    });
 }
 
 // Calculate XP needed for next level
@@ -128,22 +342,56 @@ function updatePlayerPosition() {
     player.element.style.top = player.y + 'px';
     positionDisplay.textContent = `X: ${Math.floor(player.x / TILE_SIZE)}, Y: ${Math.floor(player.y / TILE_SIZE)}`;
 
-    // Check for quest marker proximity
-    checkQuestProximity();
+    // Check for door proximity first (higher priority)
+    if (checkDoorProximity()) {
+        return; // Door entered, stop checking other proximities
+    }
+
+    // Check for NPC proximity
+    checkNPCProximity();
 }
 
-// Check if a position collides with any obstacle
+// Check if player is near a door
+function checkDoorProximity() {
+    const room = ROOMS[player.currentRoom];
+    for (let door of room.doors) {
+        const distance = Math.sqrt(
+            Math.pow(player.x - door.x, 2) +
+            Math.pow(player.y - door.y, 2)
+        );
+
+        // If player is very close to door (touching it)
+        if (distance < TILE_SIZE) {
+            switchRoom(door.to);
+            return true;
+        }
+    }
+    return false;
+}
+
+// Check if a position collides with any obstacle or NPC
 function checkCollision(x, y) {
     // Check world boundaries
     if (x < 0 || y < 0 || x + TILE_SIZE > WORLD_WIDTH || y + TILE_SIZE > WORLD_HEIGHT) {
         return true;
     }
 
-    // Check obstacles
-    for (let obstacle of obstacles) {
+    // Check obstacles in current room
+    const room = ROOMS[player.currentRoom];
+    for (let obstacle of room.obstacles) {
         if (Math.abs(x - obstacle.x) < TILE_SIZE &&
             Math.abs(y - obstacle.y) < TILE_SIZE) {
             return true;
+        }
+    }
+
+    // Check NPCs in current room
+    for (let [npcId, npc] of Object.entries(NPCS)) {
+        if (npc.room === player.currentRoom) {
+            if (Math.abs(x - npc.x) < TILE_SIZE &&
+                Math.abs(y - npc.y) < TILE_SIZE) {
+                return true;
+            }
         }
     }
 
@@ -169,61 +417,54 @@ function movePlayer(dx, dy) {
     }
 }
 
-// Check if player is near a quest marker
-function checkQuestProximity() {
-    for (let quest of quests) {
-        const distance = Math.sqrt(
-            Math.pow(player.x - quest.x, 2) +
-            Math.pow(player.y - quest.y, 2)
-        );
+// Check if player is near an NPC
+function checkNPCProximity() {
+    for (let [npcId, npc] of Object.entries(NPCS)) {
+        if (npc.room === player.currentRoom) {
+            const distance = Math.sqrt(
+                Math.pow(player.x - npc.x, 2) +
+                Math.pow(player.y - npc.y, 2)
+            );
 
-        // If player is very close to quest marker (touching it)
-        if (distance < TILE_SIZE) {
-            showQuestPanel(quest);
-            return;
+            // If player is very close to NPC (touching it)
+            if (distance < TILE_SIZE * 1.2) {
+                showNPCPanel(npcId);
+                return;
+            }
         }
     }
 }
 
-// Quest Management
-function createQuest(name, description, category, xpReward, irlReward) {
-    // Find a random position that doesn't collide
-    let x, y;
-    let attempts = 0;
-    do {
-        x = Math.floor(Math.random() * (WORLD_WIDTH / TILE_SIZE - 1)) * TILE_SIZE;
-        y = Math.floor(Math.random() * (WORLD_HEIGHT / TILE_SIZE - 1)) * TILE_SIZE;
-        attempts++;
-    } while (checkCollision(x, y) && attempts < 50);
-
+// Quest Management - now NPC-based
+function createQuest(name, description, npcId, xpReward, irlReward) {
     const quest = {
         id: Date.now(),
         name,
         description,
-        category,
+        npcId,
         xpReward: parseInt(xpReward),
-        irlReward,
-        x,
-        y
+        irlReward
     };
 
     quests.push(quest);
     saveQuests();
-    renderQuestMarkers();
+    renderRoom(); // Re-render to update NPC quest indicators
     return quest;
 }
 
 function deleteQuest(questId) {
     quests = quests.filter(q => q.id !== questId);
     saveQuests();
-    renderQuestMarkers();
+    renderRoom(); // Re-render to update NPC quest indicators
 }
 
 function completeQuest(quest) {
     addXp(quest.xpReward);
 
     // Show completion message
-    let message = `✨ Quest Complete! +${quest.xpReward} XP`;
+    const npc = NPCS[quest.npcId];
+    const npcName = getNPCName(quest.npcId);
+    let message = `✨ Quest Complete!\n${npc.emoji} ${npcName} is pleased!\n+${quest.xpReward} XP`;
     if (quest.irlReward) {
         message += `\n🎁 Reward: ${quest.irlReward}`;
     }
@@ -231,51 +472,107 @@ function completeQuest(quest) {
 
     // Remove quest
     deleteQuest(quest.id);
-    hideQuestPanel();
+    hideNPCPanel();
 }
 
-// Render quest markers in the game world
-function renderQuestMarkers() {
-    const markersContainer = document.getElementById('quest-markers');
-    markersContainer.innerHTML = '';
+// Show NPC interaction panel
+function showNPCPanel(npcId) {
+    const npc = NPCS[npcId];
+    const quest = quests.find(q => q.npcId === npcId);
 
-    quests.forEach(quest => {
-        const marker = document.createElement('div');
-        marker.className = `quest-marker ${quest.category}`;
-        marker.style.left = quest.x + 'px';
-        marker.style.top = quest.y + 'px';
-        marker.textContent = categoryEmojis[quest.category];
-        marker.setAttribute('data-quest-id', quest.id);
+    currentNPC = npcId;
 
-        marker.addEventListener('click', () => {
-            showQuestPanel(quest);
-        });
+    // Check if this is first time meeting the pet
+    if (npcId === 'pet' && !localStorage.getItem('habitHeroPetNamed')) {
+        promptPetName();
+        return;
+    }
 
-        markersContainer.appendChild(marker);
-    });
-}
+    // Set NPC info
+    document.getElementById('npc-avatar').textContent = npc.emoji;
+    document.getElementById('npc-avatar').style.background = npc.color;
+    document.getElementById('npc-name').textContent = getNPCName(npcId);
 
-// Show quest panel
-function showQuestPanel(quest) {
-    currentQuest = quest;
-    document.getElementById('quest-title').textContent = quest.name;
-    document.getElementById('quest-description').textContent = quest.description;
-    document.getElementById('quest-xp').textContent = quest.xpReward + ' XP';
+    // Add rename button for pet
+    const npcHeader = document.querySelector('.npc-header');
+    const existingRenameBtn = document.getElementById('rename-pet-btn');
+    if (existingRenameBtn) {
+        existingRenameBtn.remove();
+    }
 
-    const irlRewardContainer = document.getElementById('quest-irl-reward-container');
-    if (quest.irlReward) {
-        document.getElementById('quest-irl-reward').textContent = quest.irlReward;
-        irlRewardContainer.style.display = 'block';
+    if (npcId === 'pet') {
+        const renameBtn = document.createElement('button');
+        renameBtn.id = 'rename-pet-btn';
+        renameBtn.className = 'btn-rename';
+        renameBtn.textContent = '✏️';
+        renameBtn.title = 'Rename your cat';
+        renameBtn.onclick = (e) => {
+            e.stopPropagation();
+            promptPetName();
+        };
+        npcHeader.appendChild(renameBtn);
+    }
+
+    const questInfo = document.getElementById('quest-info');
+    const noQuestInfo = document.getElementById('no-quest-info');
+
+    if (quest) {
+        // NPC has a quest
+        document.getElementById('npc-dialogue').textContent = npc.dialogue;
+        document.getElementById('quest-title').textContent = quest.name;
+        document.getElementById('quest-description').textContent = quest.description;
+        document.getElementById('quest-xp').textContent = quest.xpReward + ' XP';
+
+        const irlRewardContainer = document.getElementById('quest-irl-reward-container');
+        if (quest.irlReward) {
+            document.getElementById('quest-irl-reward').textContent = quest.irlReward;
+            irlRewardContainer.style.display = 'block';
+        } else {
+            irlRewardContainer.style.display = 'none';
+        }
+
+        questInfo.classList.remove('hidden');
+        noQuestInfo.classList.add('hidden');
     } else {
-        irlRewardContainer.style.display = 'none';
+        // NPC has no quest
+        document.getElementById('npc-dialogue').textContent = npc.noQuestDialogue;
+        questInfo.classList.add('hidden');
+        noQuestInfo.classList.remove('hidden');
     }
 
     document.getElementById('quest-panel').classList.remove('hidden');
 }
 
-function hideQuestPanel() {
+// Prompt user to name the pet
+function promptPetName() {
+    const name = prompt(`🐱 What would you like to name your cat?\n\n(Current name: ${petName})`);
+
+    if (name && name.trim()) {
+        petName = name.trim();
+        savePetName();
+        localStorage.setItem('habitHeroPetNamed', 'true');
+
+        // If panel is open, refresh it
+        if (currentNPC === 'pet') {
+            hideNPCPanel();
+            setTimeout(() => showNPCPanel('pet'), 100);
+        } else {
+            // First time naming - show the pet
+            showNPCPanel('pet');
+        }
+
+        // Re-render room to update NPC if visible
+        renderRoom();
+    } else if (!localStorage.getItem('habitHeroPetNamed')) {
+        // First time and they cancelled - try again
+        alert('Your cat needs a name!');
+        promptPetName();
+    }
+}
+
+function hideNPCPanel() {
     document.getElementById('quest-panel').classList.add('hidden');
-    currentQuest = null;
+    currentNPC = null;
 }
 
 // Parent Mode
@@ -293,9 +590,18 @@ function checkParentPassword() {
         document.getElementById('parent-password-entry').classList.add('hidden');
         document.getElementById('parent-quest-management').classList.remove('hidden');
         updateActiveQuestsList();
+        updatePetDropdownName();
     } else {
         alert('❌ Incorrect password!');
         document.getElementById('parent-password-input').value = '';
+    }
+}
+
+// Update the pet option in the dropdown to show custom name
+function updatePetDropdownName() {
+    const petOption = document.querySelector('#new-quest-npc option[value="pet"]');
+    if (petOption) {
+        petOption.textContent = `🐱 ${getPetName()} (Pet Room)`;
     }
 }
 
@@ -306,7 +612,7 @@ function hideParentMode() {
 function createQuestFromForm() {
     const name = document.getElementById('new-quest-name').value.trim();
     const description = document.getElementById('new-quest-description').value.trim();
-    const category = document.getElementById('new-quest-category').value;
+    const npcId = document.getElementById('new-quest-npc').value;
     const xpReward = document.getElementById('new-quest-xp').value;
     const irlReward = document.getElementById('new-quest-reward').value.trim();
 
@@ -320,7 +626,14 @@ function createQuestFromForm() {
         return;
     }
 
-    createQuest(name, description, category, xpReward, irlReward);
+    // Check if NPC already has a quest
+    const existingQuest = quests.find(q => q.npcId === npcId);
+    if (existingQuest) {
+        alert(`❌ ${NPCS[npcId].name} already has a quest! Complete or delete it first.`);
+        return;
+    }
+
+    createQuest(name, description, npcId, xpReward, irlReward);
 
     // Clear form
     document.getElementById('new-quest-name').value = '';
@@ -342,19 +655,23 @@ function updateActiveQuestsList() {
         return;
     }
 
-    listContainer.innerHTML = quests.map(quest => `
-        <div class="quest-item">
-            <div class="quest-item-header">
-                <span class="quest-item-title">${quest.name}</span>
-                <span class="quest-item-category ${quest.category}">
-                    ${categoryEmojis[quest.category]} ${quest.category}
-                </span>
+    listContainer.innerHTML = quests.map(quest => {
+        const npc = NPCS[quest.npcId];
+        const npcName = getNPCName(quest.npcId);
+        return `
+            <div class="quest-item">
+                <div class="quest-item-header">
+                    <span class="quest-item-title">${quest.name}</span>
+                    <span class="quest-item-npc" style="background: ${npc.color};">
+                        ${npc.emoji} ${npcName}
+                    </span>
+                </div>
+                <div class="quest-item-description">${quest.description}</div>
+                <div class="quest-item-xp">Reward: ${quest.xpReward} XP${quest.irlReward ? ' + ' + quest.irlReward : ''}</div>
+                <button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>
             </div>
-            <div class="quest-item-description">${quest.description}</div>
-            <div class="quest-item-xp">Reward: ${quest.xpReward} XP${quest.irlReward ? ' + ' + quest.irlReward : ''}</div>
-            <button class="btn btn-danger btn-small" onclick="deleteQuest(${quest.id}); updateActiveQuestsList();">Delete</button>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Keyboard controls
@@ -390,11 +707,10 @@ function handleMovement() {
 }
 
 // Click/Tap to move
-const gameWorld = document.getElementById('game-world');
-
 gameWorld.addEventListener('click', (e) => {
-    // Ignore clicks on quest markers
-    if (e.target.classList.contains('quest-marker')) {
+    // Ignore clicks on NPCs and doors
+    if (e.target.classList.contains('npc') || e.target.closest('.npc') ||
+        e.target.classList.contains('door') || e.target.closest('.door')) {
         return;
     }
 
@@ -423,6 +739,13 @@ gameWorld.addEventListener('click', (e) => {
 
 // Event Listeners
 function setupEventListeners() {
+    // Room navigation
+    document.querySelectorAll('.room-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            switchRoom(btn.dataset.room);
+        });
+    });
+
     // Parent mode
     document.getElementById('parent-mode-btn').addEventListener('click', showParentMode);
     document.getElementById('parent-password-submit').addEventListener('click', checkParentPassword);
@@ -434,20 +757,25 @@ function setupEventListeners() {
     document.getElementById('create-quest-btn').addEventListener('click', createQuestFromForm);
     document.getElementById('close-parent-panel').addEventListener('click', hideParentMode);
 
-    // Quest panel
+    // NPC/Quest panel
     document.getElementById('complete-quest-btn').addEventListener('click', () => {
-        if (currentQuest) {
-            completeQuest(currentQuest);
+        if (currentNPC) {
+            const quest = quests.find(q => q.npcId === currentNPC);
+            if (quest) {
+                completeQuest(quest);
+            }
         }
     });
-    document.getElementById('close-quest-btn').addEventListener('click', hideQuestPanel);
+    document.getElementById('close-quest-btn').addEventListener('click', hideNPCPanel);
+    document.getElementById('close-npc-btn').addEventListener('click', hideNPCPanel);
 }
 
 // Storage functions
 function saveGameState() {
     localStorage.setItem('habitHeroPlayer', JSON.stringify({
         level: player.level,
-        xp: player.xp
+        xp: player.xp,
+        currentRoom: player.currentRoom
     }));
 }
 
@@ -457,6 +785,7 @@ function loadGameState() {
         const data = JSON.parse(saved);
         player.level = data.level || 1;
         player.xp = data.xp || 0;
+        player.currentRoom = data.currentRoom || 'kitchen';
     }
 }
 
@@ -468,6 +797,17 @@ function loadQuests() {
     const saved = localStorage.getItem('habitHeroQuests');
     if (saved) {
         quests = JSON.parse(saved);
+    }
+}
+
+function savePetName() {
+    localStorage.setItem('habitHeroPetName', petName);
+}
+
+function loadPetName() {
+    const saved = localStorage.getItem('habitHeroPetName');
+    if (saved) {
+        petName = saved;
     }
 }
 

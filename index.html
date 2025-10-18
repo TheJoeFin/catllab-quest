@@ -30,37 +30,60 @@
 
         <!-- Controls Info -->
         <div class="info">
-            <p>Walk around and complete quests to earn XP!</p>
-            <p>Position: <span id="position">X: 0, Y: 0</span></p>
+            <p>Walk through doors to explore! Talk to NPCs to get quests!</p>
+            <p>Room: <span id="current-room">Kitchen</span> | Position: <span id="position">X: 0, Y: 0</span></p>
         </div>
 
         <!-- Parent Mode Button -->
         <button id="parent-mode-btn" class="parent-mode-btn">Parent Mode</button>
 
+        <!-- Room Navigation -->
+        <div id="room-nav" class="room-nav">
+            <button class="room-btn" data-room="kitchen">🏠 Kitchen</button>
+            <button class="room-btn" data-room="basement">🧺 Basement</button>
+            <button class="room-btn" data-room="petroom">🐾 Pet Room</button>
+            <button class="room-btn" data-room="study">📚 Study</button>
+        </div>
+
         <!-- Game World -->
         <div id="game-world">
             <div id="player"></div>
-            <div id="quest-markers"></div>
+            <div id="npcs-container"></div>
         </div>
 
-        <!-- Quest Interaction Panel -->
+        <!-- NPC Interaction Panel -->
         <div id="quest-panel" class="quest-panel hidden">
             <div class="quest-panel-content">
-                <h2 id="quest-title"></h2>
-                <p id="quest-description"></p>
-                <div class="quest-rewards">
-                    <div class="reward-item">
-                        <span class="reward-label">XP Reward:</span>
-                        <span id="quest-xp" class="reward-value"></span>
+                <div class="npc-header">
+                    <div id="npc-avatar" class="npc-avatar"></div>
+                    <h2 id="npc-name"></h2>
+                </div>
+                <p id="npc-dialogue" class="npc-dialogue"></p>
+
+                <!-- Quest Info (shown if NPC has a quest) -->
+                <div id="quest-info" class="quest-info hidden">
+                    <h3 id="quest-title"></h3>
+                    <p id="quest-description"></p>
+                    <div class="quest-rewards">
+                        <div class="reward-item">
+                            <span class="reward-label">XP Reward:</span>
+                            <span id="quest-xp" class="reward-value"></span>
+                        </div>
+                        <div class="reward-item" id="quest-irl-reward-container">
+                            <span class="reward-label">IRL Reward:</span>
+                            <span id="quest-irl-reward" class="reward-value"></span>
+                        </div>
                     </div>
-                    <div class="reward-item" id="quest-irl-reward-container">
-                        <span class="reward-label">IRL Reward:</span>
-                        <span id="quest-irl-reward" class="reward-value"></span>
+                    <div class="quest-panel-buttons">
+                        <button id="complete-quest-btn" class="btn btn-primary">Complete Quest</button>
+                        <button id="close-quest-btn" class="btn btn-secondary">Close</button>
                     </div>
                 </div>
-                <div class="quest-panel-buttons">
-                    <button id="complete-quest-btn" class="btn btn-primary">Complete Quest</button>
-                    <button id="close-quest-btn" class="btn btn-secondary">Close</button>
+
+                <!-- No Quest (shown if NPC has no quest) -->
+                <div id="no-quest-info" class="no-quest-info hidden">
+                    <p>I don't have any quests for you right now. Check back later!</p>
+                    <button id="close-npc-btn" class="btn btn-secondary">Close</button>
                 </div>
             </div>
         </div>
@@ -92,11 +115,12 @@
                         <textarea id="new-quest-description" placeholder="What needs to be done?"></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Category:</label>
-                        <select id="new-quest-category">
-                            <option value="kitchen">Kitchen Quest</option>
-                            <option value="pet">Pet Quest</option>
-                            <option value="school">School Quest</option>
+                        <label>Assign to NPC:</label>
+                        <select id="new-quest-npc">
+                            <option value="wizard">🧙 Chef Wizard (Kitchen)</option>
+                            <option value="goblin">👹 Laundry Goblin (Basement)</option>
+                            <option value="pet" id="pet-option">🐱 Fluffy (Pet Room)</option>
+                            <option value="owl">🦉 Scholar Owl (Study)</option>
                         </select>
                     </div>
                     <div class="form-group">
