@@ -20,10 +20,217 @@ body {
 
 .game-container {
     display: flex;
+    flex-wrap: wrap;
     gap: 20px;
     background: transparent;
     max-width: 1400px;
     width: 100%;
+}
+
+/* Ultimate Reward Banner */
+.ultimate-reward-banner {
+    width: 100%;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 50%, #6bcf7f 100%);
+    border-radius: 15px;
+    padding: 20px 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3),
+                0 20px 60px rgba(0, 0, 0, 0.2),
+                0 0 30px rgba(255, 215, 0, 0.4),
+                inset 0 2px 0 rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    animation: ultimateBannerPulse 3s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+    order: -1; /* Ensure banner appears at the top */
+}
+
+.ultimate-reward-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, 
+        transparent 30%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        transparent 70%);
+    animation: ultimateShine 3s linear infinite;
+}
+
+@keyframes ultimateBannerPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3),
+                    0 20px 60px rgba(0, 0, 0, 0.2),
+                    0 0 30px rgba(255, 215, 0, 0.4),
+                    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 12px 50px rgba(0, 0, 0, 0.35),
+                    0 25px 70px rgba(0, 0, 0, 0.25),
+                    0 0 50px rgba(255, 215, 0, 0.6),
+                    inset 0 2px 0 rgba(255, 255, 255, 0.5);
+    }
+}
+
+@keyframes ultimateShine {
+    0% {
+        transform: translateX(-50%) translateY(-50%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(150%) translateY(50%) rotate(45deg);
+    }
+}
+
+.ultimate-reward-icon {
+    font-size: 60px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    animation: ultimateIconBounce 2s ease-in-out infinite;
+    z-index: 1;
+}
+
+@keyframes ultimateIconBounce {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-10px) rotate(-5deg);
+    }
+    75% {
+        transform: translateY(-10px) rotate(5deg);
+    }
+}
+
+.ultimate-reward-content {
+    flex: 1;
+    text-align: center;
+    z-index: 1;
+}
+
+.ultimate-reward-title {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4),
+                 0 1px 3px rgba(0, 0, 0, 0.3);
+    margin-bottom: 8px;
+    animation: ultimateTextGlow 2s ease-in-out infinite;
+    letter-spacing: 2px;
+}
+
+@keyframes ultimateTextGlow {
+    0%, 100% {
+        text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4),
+                     0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4),
+                     0 1px 3px rgba(0, 0, 0, 0.3),
+                     0 0 20px rgba(255, 255, 255, 0.6);
+    }
+}
+
+.ultimate-reward-name {
+    font-size: 2em;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5),
+                 0 2px 4px rgba(0, 0, 0, 0.3);
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+}
+
+.ultimate-reward-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.ultimate-reward-cost {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 16px;
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+}
+
+.ultimate-progress-bar-container {
+    width: 100%;
+    max-width: 600px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2),
+                0 2px 4px rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.ultimate-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #4caf50 0%, #8bc34a 50%, #ffeb3b 100%);
+    border-radius: 15px;
+    transition: width 0.5s ease;
+    position: relative;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.ultimate-progress-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.6), 
+        transparent);
+    animation: ultimateProgressShimmer 2s infinite;
+}
+
+@keyframes ultimateProgressShimmer {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+/* Desktop Layout - Ensure proper three-column layout */
+@media (min-width: 1025px) {
+    .game-container {
+        flex-wrap: wrap; /* Allow wrapping so banner can be on its own row */
+    }
+    
+    .ultimate-reward-banner {
+        flex: 1 1 100%; /* Take full width and force to own row */
+        width: 100%;
+        order: -1;
+    }
+    
+    .left-sidebar {
+        flex: 0 0 260px; /* Don't grow or shrink, fixed 260px */
+        order: 0;
+    }
+    
+    .main-game-area {
+        flex: 1 1 auto; /* Grow to fill remaining space */
+        min-width: 0;
+        order: 1;
+    }
+    
+    .right-sidebar {
+        flex: 0 0 280px; /* Don't grow or shrink, fixed 280px */
+        order: 2;
+    }
 }
 
 /* Left Sidebar */
@@ -106,6 +313,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    min-width: 0; /* Allow flex item to shrink below its content size */
 }
 
 /* Position display removed */
@@ -418,7 +626,8 @@ body {
 /* Game World */
 #game-world {
     position: relative;
-    width: 600px;
+    width: 100%;
+    max-width: 100%;
     height: 600px;
     background:
         repeating-linear-gradient(
@@ -2350,6 +2559,11 @@ body {
         gap: 15px;
     }
 
+    .ultimate-reward-banner {
+        width: 100%;
+        order: -1;
+    }
+
     .left-sidebar {
         width: 100%;
         max-width: 600px;
@@ -2381,6 +2595,35 @@ body {
 
     .game-container {
         gap: 12px;
+    }
+
+    /* Ultimate Reward Banner - Mobile */
+    .ultimate-reward-banner {
+        padding: 15px 20px;
+        gap: 12px;
+    }
+
+    .ultimate-reward-icon {
+        font-size: 40px;
+    }
+
+    .ultimate-reward-title {
+        font-size: 1.2em;
+        letter-spacing: 1px;
+    }
+
+    .ultimate-reward-name {
+        font-size: 1.4em;
+    }
+
+    .ultimate-reward-cost {
+        font-size: 1em;
+        padding: 5px 12px;
+    }
+
+    .ultimate-progress-bar-container {
+        height: 24px;
+        max-width: 100%;
     }
 
     .left-sidebar, .right-sidebar {
@@ -2469,6 +2712,40 @@ body {
 
     .game-container {
         gap: 10px;
+    }
+
+    /* Ultimate Reward Banner - Small Mobile */
+    .ultimate-reward-banner {
+        padding: 12px 15px;
+        gap: 8px;
+        flex-direction: column;
+    }
+
+    .ultimate-reward-icon {
+        font-size: 35px;
+    }
+
+    .ultimate-reward-icon:last-child {
+        display: none; /* Hide second icon on very small screens */
+    }
+
+    .ultimate-reward-title {
+        font-size: 1em;
+        margin-bottom: 5px;
+    }
+
+    .ultimate-reward-name {
+        font-size: 1.2em;
+        margin-bottom: 8px;
+    }
+
+    .ultimate-reward-cost {
+        font-size: 0.9em;
+        padding: 4px 10px;
+    }
+
+    .ultimate-progress-bar-container {
+        height: 20px;
     }
 
     .left-sidebar, .right-sidebar {

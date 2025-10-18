@@ -1283,6 +1283,25 @@ function updatePlayerStats() {
     if (playerGemsDisplay) {
         playerGemsDisplay.textContent = player.gems;
     }
+    
+    // Update Ultimate Reward Banner
+    updateUltimateRewardBanner();
+}
+
+// Update Ultimate Reward Banner
+function updateUltimateRewardBanner() {
+    const ULTIMATE_REWARD_COST = 21000;
+    const currentGemsDisplay = document.getElementById('ultimate-reward-current-gems');
+    const progressBar = document.getElementById('ultimate-progress-bar');
+    
+    if (currentGemsDisplay) {
+        currentGemsDisplay.textContent = player.gems.toLocaleString();
+    }
+    
+    if (progressBar) {
+        const progressPercent = Math.min((player.gems / ULTIMATE_REWARD_COST) * 100, 100);
+        progressBar.style.width = progressPercent + '%';
+    }
 }
 
 // Add XP and check for level up
