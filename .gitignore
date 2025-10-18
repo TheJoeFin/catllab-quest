@@ -1,6 +1,12 @@
 # Node modules
 node_modules/
 
+# Database
+*.db
+*.sqlite
+*.sqlite3
+.history/
+
 # Environment variables
 .env
 .env.local
