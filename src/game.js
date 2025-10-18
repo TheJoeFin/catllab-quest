@@ -338,6 +338,9 @@ const gameWorld = document.getElementById('game-world');
 let quests = []; // Each quest will have { id, npcId, name, description, room, level, difficulty, xpReward, gemReward, irlReward, acceptedByPlayer, completed, isDaily }
 let currentNPC = null;
 let currentQuestInPanel = null; // Track which quest is being viewed in the panel
+
+// Track last completion time for each object type (for daily limits)
+let objectQuestCompletions = {}; // { questType: timestamp }
 let tasksCompletedAtLevel = {}; // Track completed tasks per level { level: count }
 
 // Default daily quests that reset every day
@@ -423,6 +426,11 @@ function showNotification(title, message, type = 'info', duration = 3000) {
     const container = document.getElementById('notification-container');
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
+    
+    // Add gem-collect class for special styling
+    if (type === 'gem') {
+        notification.classList.add('gem-collect');
+    }
 
     const icons = {
         success: '✅',
@@ -455,6 +463,44 @@ function showNotification(title, message, type = 'info', duration = 3000) {
             }
         }, 300);
     }, duration);
+}
+
+// Create floating gem animation
+function createGemFloatAnimation(amount) {
+    // Get the gem display position
+    const gemDisplay = document.getElementById('player-gems');
+    if (!gemDisplay) return;
+    
+    // Animate the gem counter itself
+    gemDisplay.style.transition = 'transform 0.3s ease';
+    gemDisplay.style.transform = 'scale(1.3)';
+    setTimeout(() => {
+        gemDisplay.style.transform = 'scale(1)';
+    }, 300);
+    
+    const rect = gemDisplay.getBoundingClientRect();
+    
+    // Create multiple floating gems based on amount (max 5 for performance)
+    const count = Math.min(amount, 5);
+    for (let i = 0; i < count; i++) {
+        const gemFloat = document.createElement('div');
+        gemFloat.className = 'gem-float';
+        gemFloat.textContent = '💎';
+        
+        // Position near the gem counter with some randomness
+        gemFloat.style.left = (rect.left + Math.random() * 40 - 20) + 'px';
+        gemFloat.style.top = (rect.top + Math.random() * 20 - 10) + 'px';
+        
+        document.body.appendChild(gemFloat);
+        
+        // Remove after animation completes
+        setTimeout(() => {
+            gemFloat.remove();
+        }, 1500);
+        
+        // Stagger the animations slightly
+        gemFloat.style.animationDelay = (i * 0.1) + 's';
+    }
 }
 
 // Daily quest management
@@ -859,6 +905,10 @@ function renderRoom() {
         doorElement.appendChild(doorText);
 
         doorElement.addEventListener('click', () => {
+            // Play door sound
+            if (typeof soundManager !== 'undefined') {
+                soundManager.playDoorOpen();
+            }
             switchRoom(door.to);
         });
 
@@ -882,14 +932,39 @@ function renderRoom() {
             const difficultyLabel = obj.level === 1 ? 'Easy' : obj.level === 2 ? 'Medium' : 'Hard';
             objElement.title = `${obj.name} - ${difficultyLabel} Tasks`;
             
-            // Add level indicator
-            const levelBadge = document.createElement('div');
-            levelBadge.className = 'object-level-badge';
-            levelBadge.textContent = obj.level;
-            levelBadge.title = `${difficultyLabel} Difficulty`;
-            objElement.appendChild(levelBadge);
+            // Check if player has an active quest from this object
+            const hasActiveQuest = quests.find(q => 
+                q.npcId === obj.questType && 
+                q.acceptedByPlayer && 
+                !q.completed
+            );
+            
+            // Check if quest is on cooldown (completed within 24 hours)
+            const onCooldown = !canAcceptObjectQuest(obj.questType);
+            
+            // Only add level badge if no active quest and not on cooldown
+            if (!hasActiveQuest && !onCooldown) {
+                const levelBadge = document.createElement('div');
+                levelBadge.className = 'object-level-badge';
+                levelBadge.textContent = obj.level;
+                levelBadge.title = `${difficultyLabel} Difficulty`;
+                objElement.appendChild(levelBadge);
+            } else if (onCooldown) {
+                // Add a cooldown indicator instead
+                const cooldownBadge = document.createElement('div');
+                cooldownBadge.className = 'object-level-badge';
+                cooldownBadge.style.background = '#999';
+                cooldownBadge.textContent = '⏰';
+                cooldownBadge.title = 'Quest on cooldown - come back later';
+                objElement.appendChild(cooldownBadge);
+                objElement.style.opacity = '0.6';
+            }
             
             objElement.addEventListener('click', () => {
+                // Play click sound
+                if (typeof soundManager !== 'undefined') {
+                    soundManager.playClick();
+                }
                 showObjectQuestPanel(obj);
             });
             
@@ -913,6 +988,10 @@ function renderRoom() {
         objElement.title = mainObj.name;
         
         objElement.addEventListener('click', () => {
+            // Play click sound
+            if (typeof soundManager !== 'undefined') {
+                soundManager.playClick();
+            }
             showMainObjectInfo(mainObj);
         });
         
@@ -986,6 +1065,14 @@ function addXp(amount) {
 function addGems(amount) {
     player.gems += amount;
     saveGameState();
+    
+    // Play gem collection sound
+    if (typeof soundManager !== 'undefined') {
+        soundManager.playGemCollect();
+    }
+    
+    // Create floating gem animation
+    createGemFloatAnimation(amount);
 }
 
 // Check if any rewards should be unlocked based on current gem count
@@ -1003,12 +1090,22 @@ function checkRewardUnlocks() {
         saveRewardVault();
         const rewardNames = newlyUnlocked.map(r => r.name).join(', ');
         showNotification('Reward Unlocked!', `${rewardNames} - Check your Reward Vault!`, 'gem', 4000);
+        
+        // Play reward unlock sound
+        if (typeof soundManager !== 'undefined') {
+            soundManager.playRewardUnlock();
+        }
     }
 }
 
 // Show level up notification
 function showLevelUpNotification() {
     showNotification('LEVEL UP!', `You are now Level ${player.level}!`, 'level', 4000);
+    
+    // Play level up sound
+    if (typeof soundManager !== 'undefined') {
+        soundManager.playLevelUp();
+    }
 }
 
 // Update player position
@@ -1213,6 +1310,12 @@ function completeQuest(quest) {
     quest.completed = true;
     quest.completedAt = new Date().toISOString(); // Track when it was completed
 
+    // If this is an object quest, record completion timestamp for daily limit
+    if (quest.npcId && Object.keys(OBJECT_QUESTS).includes(quest.npcId)) {
+        objectQuestCompletions[quest.npcId] = Date.now();
+        saveObjectQuestCompletions();
+    }
+
     // Track completed tasks for the PLAYER'S current level (not quest level)
     if (!tasksCompletedAtLevel[player.level]) {
         tasksCompletedAtLevel[player.level] = 0;
@@ -1228,6 +1331,11 @@ function completeQuest(quest) {
     const difficultyLabel = quest.level === 1 ? 'Easy' : quest.level === 2 ? 'Medium' : 'Hard';
     let message = `+${quest.xpReward} XP, +${quest.gemReward} Gem${quest.gemReward > 1 ? 's' : ''} • ${completedCount}/15 tasks at Player Level ${player.level}`;
     showNotification('Quest Complete!', message, 'success', 4000);
+    
+    // Play quest complete sound
+    if (typeof soundManager !== 'undefined') {
+        soundManager.playQuestComplete();
+    }
 
     // Save state
     saveQuests();
@@ -1274,6 +1382,45 @@ function shouldWarnAboutTaskLimit(additionalTasks = 0) {
 
 // Show quest panel for interactive object
 function showObjectQuestPanel(obj) {
+    // Check if player already has an active quest from this object type
+    const existingQuest = quests.find(q => 
+        q.npcId === obj.questType && 
+        q.acceptedByPlayer && 
+        !q.completed
+    );
+    
+    if (existingQuest) {
+        // Show message that they already have this quest
+        document.getElementById('npc-avatar').textContent = obj.emoji;
+        document.getElementById('npc-avatar').style.background = 'transparent';
+        document.getElementById('npc-name').textContent = obj.name;
+        document.getElementById('npc-dialogue').textContent = `You already have an active quest from this ${obj.name.toLowerCase()}! Complete it first before getting another.`;
+        
+        // Hide quest info, show no quest info
+        document.getElementById('quest-info').classList.add('hidden');
+        document.getElementById('no-quest-info').classList.remove('hidden');
+        document.getElementById('quest-panel').classList.remove('hidden');
+        return;
+    }
+    
+    // Check if quest was completed recently (within 24 hours)
+    if (!canAcceptObjectQuest(obj.questType)) {
+        const timeRemaining = getTimeUntilObjectQuestAvailable(obj.questType);
+        const timeString = formatTimeRemaining(timeRemaining);
+        
+        // Show cooldown message
+        document.getElementById('npc-avatar').textContent = obj.emoji;
+        document.getElementById('npc-avatar').style.background = 'transparent';
+        document.getElementById('npc-name').textContent = obj.name;
+        document.getElementById('npc-dialogue').textContent = `You've already completed a quest from this ${obj.name.toLowerCase()} today! Come back in ${timeString} for a new quest.`;
+        
+        // Hide quest info, show no quest info
+        document.getElementById('quest-info').classList.add('hidden');
+        document.getElementById('no-quest-info').classList.remove('hidden');
+        document.getElementById('quest-panel').classList.remove('hidden');
+        return;
+    }
+    
     // Get available quests for this object type and level
     const availableQuests = OBJECT_QUESTS[obj.questType]?.[obj.level] || [];
     
@@ -1320,7 +1467,7 @@ function showObjectQuestPanel(obj) {
         xpReward: selectedQuest.xp,
         gemReward: gemReward,
         level: obj.level, // This is difficulty level, not player level requirement
-        objectType: obj.type,
+        objectType: obj.questType, // Use questType for creating the quest
         room: player.currentRoom
     };
     
@@ -1494,20 +1641,30 @@ function updatePlayerQuestList() {
         }
         
         return `
-            <div class="player-quest-item" style="border: 1px solid #ddd; padding: 8px; margin-bottom: 8px; border-radius: 5px; background: white;">
+            <div class="player-quest-item" style="
+                border: 1px solid #ddd; 
+                padding: 10px; 
+                margin-bottom: 10px; 
+                border-radius: 8px; 
+                background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 
+                            0 4px 8px rgba(0, 0, 0, 0.05);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                cursor: pointer;
+            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15), 0 6px 12px rgba(0, 0, 0, 0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.05)';">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 5px;">
                     <strong style="font-size: 14px;">${quest.name}</strong>
-                    <span style="font-size: 18px;">${questEmoji}</span>
+                    <span style="font-size: 18px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));">${questEmoji}</span>
                 </div>
                 <div style="font-size: 12px; color: #666; margin-bottom: 5px;">${quest.description}</div>
                 <div style="font-size: 11px; color: #999; margin-bottom: 5px;">
                     📍 ${room.emoji} ${room.name} • ⭐ Level ${quest.level} • <span style="color: ${difficultyColor}; font-weight: bold;">${difficulty.toUpperCase()}</span>
                 </div>
-                <div style="font-size: 11px; color: #4caf50; margin-bottom: 5px;">
+                <div style="font-size: 11px; color: #4caf50; margin-bottom: 8px;">
                     🎯 ${quest.xpReward} XP • 💎 ${quest.gemReward || DIFFICULTY_GEMS[difficulty] || 1} Gems${quest.irlReward ? ' • 🎁 ' + quest.irlReward : ''}
                 </div>
-                <button class="btn btn-primary btn-small" onclick="completeQuestFromList(${quest.id})" style="width: 100%; font-size: 12px; padding: 5px;">
-                    ✓ Complete
+                <button class="btn btn-primary btn-small" onclick="completeQuestFromList(${quest.id})" style="width: 100%; font-size: 12px; padding: 6px;">
+                    ✓ Complete Quest
                 </button>
             </div>
         `;
@@ -2490,6 +2647,36 @@ gameWorld.addEventListener('click', (e) => {
 
 // Event Listeners
 function setupEventListeners() {
+    // Global click sound for all buttons
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.btn') || 
+            e.target.closest('button') || 
+            e.target.classList.contains('room-nav-btn')) {
+            if (typeof soundManager !== 'undefined') {
+                soundManager.playClick();
+            }
+        }
+    });
+    
+    // Global hover sound for interactive elements
+    let hoverTimeout;
+    document.addEventListener('mouseover', (e) => {
+        if (e.target.classList.contains('interactive-object') ||
+            e.target.classList.contains('main-object') ||
+            e.target.classList.contains('door') ||
+            e.target.classList.contains('npc') ||
+            e.target.classList.contains('room-nav-btn') ||
+            e.target.closest('.btn')) {
+            // Throttle hover sounds to avoid spam
+            clearTimeout(hoverTimeout);
+            hoverTimeout = setTimeout(() => {
+                if (typeof soundManager !== 'undefined') {
+                    soundManager.playHover();
+                }
+            }, 50);
+        }
+    });
+    
     // Welcome modal
     document.getElementById('welcome-start-btn').addEventListener('click', closeWelcomeModal);
 
@@ -2542,17 +2729,49 @@ function setupEventListeners() {
         if (currentQuestInPanel) {
             // If it's an object quest (has objectType), create it dynamically
             if (currentQuestInPanel.objectType) {
+                // Check if already accepted (double-click protection)
+                const existingQuest = quests.find(q => 
+                    q.npcId === currentQuestInPanel.objectType && 
+                    q.name === currentQuestInPanel.name &&
+                    q.acceptedByPlayer && 
+                    !q.completed
+                );
+                
+                if (existingQuest) {
+                    showNotification('Already Accepted', 'You already have this quest!', 'warning', 2000);
+                    hideNPCPanel();
+                    return;
+                }
+                
                 const quest = createQuest(
                     currentQuestInPanel.name,
                     currentQuestInPanel.description,
-                    currentQuestInPanel.objectType, // Use object type as npcId
+                    currentQuestInPanel.objectType, // Use questType as npcId
                     currentQuestInPanel.room,
                     currentQuestInPanel.level,
                     currentQuestInPanel.difficulty,
                     currentQuestInPanel.xpReward,
                     '' // No IRL reward for object quests
                 );
-                acceptQuest(quest);
+                // The quest is created with acceptedByPlayer: false
+                // Now we need to mark it as accepted
+                quest.acceptedByPlayer = true;
+                saveQuests();
+                
+                // Show acceptance message
+                showNotification('Quest Accepted', `"${quest.name}" added to your quest log`, 'quest', 3000);
+                
+                // Update displays - force a complete refresh
+                updatePlayerQuestList();
+                updatePlayerStats();
+                renderRoom();
+                
+                // Emit WebSocket event for real-time updates
+                if (socket && socket.connected) {
+                    socket.emit('quest:created', quest);
+                }
+                
+                hideNPCPanel();
             } else {
                 acceptQuest(currentQuestInPanel);
             }
@@ -2656,8 +2875,61 @@ function loadRewardVault() {
     }
 }
 
-// Load quests before initializing
+function saveObjectQuestCompletions() {
+    localStorage.setItem('habitHeroObjectCompletions', JSON.stringify(objectQuestCompletions));
+}
+
+function loadObjectQuestCompletions() {
+    const saved = localStorage.getItem('habitHeroObjectCompletions');
+    if (saved) {
+        objectQuestCompletions = JSON.parse(saved);
+    }
+}
+
+// Check if an object quest can be accepted (not completed in last 24 hours)
+function canAcceptObjectQuest(questType) {
+    const lastCompletion = objectQuestCompletions[questType];
+    if (!lastCompletion) {
+        return true; // Never completed, can accept
+    }
+    
+    const now = Date.now();
+    const timeSinceCompletion = now - lastCompletion;
+    const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    
+    return timeSinceCompletion >= twentyFourHours;
+}
+
+// Get time remaining until object quest is available again
+function getTimeUntilObjectQuestAvailable(questType) {
+    const lastCompletion = objectQuestCompletions[questType];
+    if (!lastCompletion) {
+        return 0;
+    }
+    
+    const now = Date.now();
+    const timeSinceCompletion = now - lastCompletion;
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+    const timeRemaining = twentyFourHours - timeSinceCompletion;
+    
+    return Math.max(0, timeRemaining);
+}
+
+// Format time remaining as human-readable string
+function formatTimeRemaining(milliseconds) {
+    const hours = Math.floor(milliseconds / (60 * 60 * 1000));
+    const minutes = Math.floor((milliseconds % (60 * 60 * 1000)) / (60 * 1000));
+    
+    if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+    } else {
+        return `${minutes}m`;
+    }
+}
+
+// Load quests and object completions before initializing
 loadQuests();
+loadObjectQuestCompletions();
 
 // Initialize the game
 init();
