@@ -490,6 +490,7 @@ section h2 {
 }
 
 .modal-content {
+    position: relative;
     background: white;
     border-radius: 16px;
     padding: 32px;
@@ -509,6 +510,33 @@ section h2 {
     color: #64748b;
     margin-bottom: 24px;
     line-height: 1.6;
+}
+
+/* Modal close button (top-right X) */
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #f44336;
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    z-index: 10;
+}
+
+.modal-close-btn:hover {
+    background: #d32f2f;
+    transform: scale(1.1);
 }
 
 .modal-actions {
