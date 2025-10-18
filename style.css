@@ -1,0 +1,148 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.game-container {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 2em;
+}
+
+.info {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+.info p {
+    margin: 5px 0;
+}
+
+#position {
+    color: #667eea;
+    font-weight: bold;
+}
+
+#game-world {
+    position: relative;
+    width: 600px;
+    height: 600px;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            #8bc34a 0px,
+            #8bc34a 40px,
+            #7cb342 40px,
+            #7cb342 80px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            #8bc34a 0px,
+            #8bc34a 40px,
+            #7cb342 40px,
+            #7cb342 80px
+        );
+    border: 4px solid #333;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0 auto;
+}
+
+/* Add some decorative trees/obstacles */
+#game-world::before {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: #2e7d32;
+    border-radius: 50%;
+    top: 80px;
+    left: 200px;
+    box-shadow:
+        160px 0 0 #2e7d32,
+        0 160px 0 #2e7d32,
+        320px 240px 0 #2e7d32,
+        120px 360px 0 #2e7d32,
+        400px 120px 0 #2e7d32;
+}
+
+/* Add some flowers */
+#game-world::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #ff4081;
+    border-radius: 50%;
+    top: 160px;
+    left: 320px;
+    box-shadow:
+        -80px 160px 0 #ffeb3b,
+        200px 80px 0 #ff4081,
+        -160px 320px 0 #ffeb3b,
+        240px 280px 0 #ff4081;
+}
+
+#player {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: #ff5722;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    transition: all 0.1s ease;
+    box-shadow:
+        0 0 0 3px #ff5722,
+        0 4px 8px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+/* Add eyes to the player */
+#player::before,
+#player::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    top: 12px;
+    border: 2px solid #333;
+}
+
+#player::before {
+    left: 8px;
+}
+
+#player::after {
+    right: 8px;
+}
+
+/* Movement animation */
+@keyframes move {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+#player.moving {
+    animation: move 0.2s ease;
+}
