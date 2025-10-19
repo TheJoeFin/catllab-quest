@@ -1,10 +1,16 @@
-# Node modules
+# Node modules (not needed for static app)
 node_modules/
+package-lock.json
 
-# Database
+# Backend files (not needed - app is now static)
+server.js
+database.js
+quests.db
 *.db
 *.sqlite
 *.sqlite3
+
+# History
 .history/
 
 # Environment variables
@@ -35,7 +41,7 @@ Thumbs.db
 *.swo
 *~
 
-# Build files
+# Build files (not needed for static site)
 dist/
 build/
 

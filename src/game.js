@@ -52,73 +52,9 @@ const DIFFICULTY_GEMS = {
     hard: 3
 };
 
-// WebSocket connection for real-time updates
-let socket;
-if (typeof io !== 'undefined') {
-    socket = io();
-    
-    socket.on('connect', () => {
-        console.log('🔌 Connected to server via WebSocket');
-    });
-    
-    socket.on('disconnect', () => {
-        console.log('🔌 Disconnected from server');
-    });
-    
-    socket.on('quest:created', (quest) => {
-        console.log('📢 Quest created remotely:', quest);
-        loadQuests(); // Reload quests from storage
-        updatePlayerQuestList();
-        showNotification('New Quest!', `New quest added: ${quest.name}`, 'info', 3000);
-    });
-    
-    socket.on('quest:completed', (data) => {
-        console.log('📢 Quest completed remotely:', data);
-        loadQuests();
-        loadGameState();
-        updatePlayerQuestList();
-        updatePlayerStats();
-        // Note: Not showing celebration for remote completions to avoid confusion
-    });
-    
-    socket.on('quest:uncompleted', (data) => {
-        console.log('📢 Quest uncompleted remotely:', data);
-        loadQuests();
-        loadGameState();
-        updatePlayerQuestList();
-        updatePlayerStats();
-        showNotification('Quest Updated', 'A quest was marked as incomplete', 'info', 3000);
-    });
-    
-    socket.on('quest:deleted', (data) => {
-        console.log('📢 Quest deleted remotely:', data);
-        loadQuests();
-        updatePlayerQuestList();
-        showNotification('Quest Removed', 'A quest was deleted', 'info', 3000);
-    });
-    
-    socket.on('reward:created', (reward) => {
-        console.log('📢 Reward created remotely:', reward);
-        loadRewardVault();
-        showNotification('New Reward!', `New reward available: ${reward.name}`, 'info', 3000);
-    });
-    
-    socket.on('reward:claimed', (data) => {
-        console.log('📢 Reward claimed remotely:', data);
-        loadRewardVault();
-        loadGameState();
-        updatePlayerStats();
-        showNotification('Reward Claimed!', 'A reward was claimed!', 'success', 3000);
-    });
-    
-    socket.on('player:updated', (playerData) => {
-        console.log('📢 Player data updated remotely:', playerData);
-        loadGameState();
-        updatePlayerStats();
-    });
-} else {
-    console.warn('Socket.IO not loaded, real-time updates disabled');
-}
+// Real-time updates removed - app now uses localStorage only
+// All data persists in browser's localStorage automatically
+// To sync between devices, simply refresh the page
 
 // Room definitions with level-based interactive objects
 const ROOMS = {
@@ -1544,11 +1480,6 @@ function createQuest(name, description, npcId, room, level, difficulty, xpReward
     saveQuests();
     renderRoom(); // Re-render to update NPC quest indicators
     
-    // Emit WebSocket event
-    if (socket && socket.connected) {
-        socket.emit('quest:created', quest);
-    }
-    
     return quest;
 }
 
@@ -1556,11 +1487,6 @@ function deleteQuest(questId) {
     quests = quests.filter(q => q.id !== questId);
     saveQuests();
     renderRoom(); // Re-render to update NPC quest indicators
-    
-    // Emit WebSocket event
-    if (socket && socket.connected) {
-        socket.emit('quest:deleted', { questId });
-    }
 }
 
 function acceptQuest(quest) {
@@ -1623,16 +1549,6 @@ function completeQuest(quest) {
     updatePlayerStats();
     renderRoom();
     checkRewardUnlocks(); // Check if any rewards were unlocked
-    
-    // Emit WebSocket event
-    if (socket && socket.connected) {
-        socket.emit('quest:completed', { 
-            quest,
-            playerLevel: player.level,
-            playerXp: player.xp,
-            playerGems: player.gems
-        });
-    }
 }
 
 // Count incomplete tasks for a specific level
@@ -1983,22 +1899,12 @@ function createReward(name, gemCost) {
         saveRewardVault();
     }
 
-    // Emit WebSocket event
-    if (socket && socket.connected) {
-        socket.emit('reward:created', reward);
-    }
-
     return reward;
 }
 
 function deleteReward(rewardId) {
     vaultRewards = vaultRewards.filter(r => r.id !== rewardId);
     saveRewardVault();
-    
-    // Emit WebSocket event
-    if (socket && socket.connected) {
-        socket.emit('reward:deleted', { rewardId });
-    }
 }
 
 function claimReward(rewardId) {
@@ -2024,11 +1930,6 @@ function claimReward(rewardId) {
 
     showNotification('Reward Claimed!', `"${reward.name}" - Show your parents!`, 'success', 5000);
     updateVaultRewardsList();
-    
-    // Emit WebSocket event
-    if (socket && socket.connected) {
-        socket.emit('reward:claimed', { rewardId, reward });
-    }
 }
 
 function showRewardVault() {
@@ -3102,11 +3003,6 @@ function setupEventListeners() {
                 updatePlayerQuestList();
                 updatePlayerStats();
                 renderRoom();
-                
-                // Emit WebSocket event for real-time updates
-                if (socket && socket.connected) {
-                    socket.emit('quest:created', quest);
-                }
                 
                 hideNPCPanel();
             } else {

@@ -1,0 +1,14 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/sounds/*", "/src/*", "*.css", "*.js", "*.html"]
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".mp3": "audio/mpeg",
+    ".wav": "audio/wav"
+  },
+  "globalHeaders": {
+    "cache-control": "public, max-age=3600"
+  }
+}
