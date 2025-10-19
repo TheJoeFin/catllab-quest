@@ -40,7 +40,7 @@ jobs:
           app_location: "/" # App source code path
           api_location: "" # No API - this is a pure static app
           output_location: "" # No build step needed - deploying source files directly
-          skip_deploy_on_missing_secrets: true
+          skip_app_build: true # Skip build - this is a pure static app
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
@@ -53,4 +53,3 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "close"
-          skip_deploy_on_missing_secrets: true
